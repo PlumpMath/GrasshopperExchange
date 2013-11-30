@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelloWorld", "HelloWorld\HelloWorld.csproj", "{8ED811E8-4AD9-4123-9498-E74A09768BA0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hairworm", "Hairworm\Hairworm.csproj", "{7CD04B9E-D394-418B-A26B-BEFEE5A1D152}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug64|Any CPU = Debug64|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8ED811E8-4AD9-4123-9498-E74A09768BA0}.Debug64|Any CPU.ActiveCfg = Debug64|Any CPU
+		{8ED811E8-4AD9-4123-9498-E74A09768BA0}.Debug64|Any CPU.Build.0 = Debug64|Any CPU
+		{8ED811E8-4AD9-4123-9498-E74A09768BA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8ED811E8-4AD9-4123-9498-E74A09768BA0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7CD04B9E-D394-418B-A26B-BEFEE5A1D152}.Debug64|Any CPU.ActiveCfg = Debug64|Any CPU
+		{7CD04B9E-D394-418B-A26B-BEFEE5A1D152}.Debug64|Any CPU.Build.0 = Debug64|Any CPU
+		{7CD04B9E-D394-418B-A26B-BEFEE5A1D152}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CD04B9E-D394-418B-A26B-BEFEE5A1D152}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

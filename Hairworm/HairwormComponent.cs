@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Special;
@@ -29,7 +30,7 @@ namespace Hairworm
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("String", "ClusterPath", "Path To Cluster", GH_ParamAccess.item);
+            pManager.AddTextParameter("String", "ClusterURL", "URL To Cluster", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Activate", "Activate", "Activate to emulate clsuter", GH_ParamAccess.item, false);
             pManager.AddGeometryParameter("Input Geometry", "InputGeo", "InputGeometry", GH_ParamAccess.item);
         }
@@ -52,25 +53,36 @@ namespace Hairworm
         {
 
             // Declare a variable for the input String
-            string filename = null;
+            string fileurl = null;
             bool activate = false;
             Rhino.Geometry.Point3d point = Rhino.Geometry.Point3d.Unset;
             // 1. Declare placeholder variables and assign initial invalid data.
             //    This way, if the input parameters fail to supply valid data, we know when to abort.
 
             // 2. Retrieve input data, exit if non-existent
-            if (!DA.GetData(0, ref filename)) { return; }
+            if (!DA.GetData(0, ref fileurl)) { return; }
             if (!DA.GetData(1, ref activate)) { return; }
             if (!DA.GetData(2, ref point)) { return; }
 
+            string tempPath = System.IO.Path.GetTempPath();
+            Uri uri = new Uri(fileurl);
+            string filename = System.IO.Path.GetFileName(uri.LocalPath);
+
+            Console.WriteLine("client.downloadfile( " + fileurl + ", " + filename + " );");
+
+            using (WebClient Client = new WebClient())
+            {
+                Client.DownloadFile(fileurl, filename);
+            }
+
             // If the retrieved data is Nothing, we need to abort.
-            if (filename == null) { return; }
-            if (!File.Exists(filename)) { return; }
+            if (fileurl == null) { return; }
+            if (!File.Exists(fileurl)) { return; }
 
             if (activate)
             {
                 GH_Cluster cluster = new GH_Cluster();
-                cluster.CreateFromFilePath(filename);
+                cluster.CreateFromFilePath(fileurl);
 
                 GH_Document doc = OnPingDocument();
                 doc.AddObject(cluster, false);

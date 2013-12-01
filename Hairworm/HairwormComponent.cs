@@ -40,8 +40,9 @@ namespace Hairworm
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGeometryParameter("Output Geometry", "OutputGeo", "OutputGeometry", GH_ParamAccess.tree);
+            pManager.AddGeometryParameter("Output Geometry", "OutputGe2o", "OutputGeometry", GH_ParamAccess.tree);
             pManager.AddGenericParameter("Generic Output", "GenericOutput", "GenericOutput", GH_ParamAccess.tree);
+            pManager.AddTextParameter("Debug", "Debug", "This is debug output", GH_ParamAccess.item); 
         }
 
         /// <summary>
@@ -68,46 +69,67 @@ namespace Hairworm
             Uri uri = new Uri(fileurl);
             string filename = System.IO.Path.GetFileName(uri.LocalPath);
 
-            Console.WriteLine("client.downloadfile( " + fileurl + ", " + filename + " );");
+            string debugText = "";
+            debugText += "client.downloadfile( " + fileurl + ", " + filename + " );\n";
+            debugText += tempPath;
 
-            using (WebClient Client = new WebClient())
-            {
-                Client.DownloadFile(fileurl, filename);
-            }
+            DA.SetData(2, debugText);
 
             // If the retrieved data is Nothing, we need to abort.
             if (fileurl == null) { return; }
-            if (!File.Exists(fileurl)) { return; }
 
+			// actually run this.
             if (activate)
             {
-                GH_Cluster cluster = new GH_Cluster();
-                cluster.CreateFromFilePath(fileurl);
+				// attempt to download file
+				using (WebClient Client = new WebClient())
+				{
+					Client.DownloadFile(fileurl, tempPath + filename);
+				}
+				// if file doesn't exist, abort
+				if (!File.Exists(tempPath + filename)) { return; }
 
-                GH_Document doc = OnPingDocument();
-                doc.AddObject(cluster, false);
+				// create a cluster
+                GH_Cluster thiscluster = new GH_Cluster();
+                thiscluster.CreateFromFilePath(fileurl);
 
-                Grasshopper.Kernel.Parameters.Param_Point paramIn = new Grasshopper.Kernel.Parameters.Param_Point();
+
+				//get parent document and add cluster to it
+//                GH_Document parentdoc = OnPingDocument();
+                GH_Document newdoc = new GH_Document();
+                newdoc.AddObject(thiscluster, false);
+
+                newdoc.CreateAutomaticClusterHooks();
+                debugText += newdoc.ClusterOutputHooks();
+                debugText += newdoc.ContainsClusterHooks();
+
+                debugText += "yoy";
+            DA.SetData(2, debugText);
+
+//                Grasshopper.Kernel.Parameters.Param_Point paramIn = new Grasshopper.Kernel.Parameters.Param_Point();
+
+//                Grasshopper.Kernel.GH_Param paramIn = new Grasshopper.Kernel.GH_Param();
+				// make a 'param out' geometry item
+
                 Grasshopper.Kernel.Parameters.Param_Geometry paramOut = new Grasshopper.Kernel.Parameters.Param_Geometry();
+//                Grasshopper.Kernel.GH_Param paramOut = new Grasshopper.Kernel.GH_Param("Geometry");
 
-                paramIn.SetPersistentData(point);
+//                paramIn.SetPersistentData(point);
 
-                cluster.Params.RegisterInputParam(paramIn);
-                cluster.Params.RegisterOutputParam(paramOut);
+//                cluster.Params.RegisterInputParam(paramIn);
+                thiscluster.Params.RegisterOutputParam(paramOut);
 
-                cluster.CollectData();
 
-                cluster.ComputeData();
+
+                thiscluster.CollectData();
+
+                thiscluster.ComputeData();
 
 
                 //Grasshopper.DataTree<object> test = new DataTree<object>();
                 //test.Add(paramIn, 0);
 
-
-
                 DA.SetData(1, paramOut);
-
-
 
 
 

@@ -101,12 +101,12 @@ namespace Hairworm
 //                thiscluster.Params.RegisterOutputParam(paramOut);
 
 
-
-
 				//get parent document and add cluster to it
 //                GH_Document parentdoc = OnPingDocument();
                 GH_Document newdoc = new GH_Document();
                 newdoc.AddObject(thiscluster, false);
+
+
 
                 newdoc.CreateAutomaticClusterHooks();
                 newdoc.ExpireSolution();
@@ -123,6 +123,14 @@ namespace Hairworm
 //                Grasshopper.Kernel.GH_Param paramIn = new Grasshopper.Kernel.GH_Param();
 				// make a 'param out' geometry item
 
+				// NOTE TO MY SELF
+				// I DON'T KNOW WHAT'S GOING WRONG HERE
+				// AND I SHOULD FIX THIS THING
+				// SO I CAN GET DATA FROM THIS PARAMETER
+				// THIS IS SO THAT THIS WIL BREKA
+				fjdskal;fjdksal;f
+				GH_Param<GH_Brep> newparam = new GH_Param<GH_Brep>;
+
                 Grasshopper.Kernel.Parameters.Param_Geometry paramOut = new Grasshopper.Kernel.Parameters.Param_Geometry();
 //                Grasshopper.Kernel.GH_Param paramOut = new Grasshopper.Kernel.GH_Param("Geometry");
 
@@ -131,6 +139,7 @@ namespace Hairworm
 //                cluster.Params.RegisterInputParam(paramIn);
 //                thiscluster.Params.RegisterOutputParam(paramOut);
 
+                thiscluster.Params.RegisterOutputParam(paramOut);
 
 
                 thiscluster.CollectData();
@@ -139,11 +148,24 @@ namespace Hairworm
 
                 thiscluster.ExpireSolution(true);
 
+
                 debugText += "\ncluster output = " + string.Join(", ", thiscluster.Params.Output);
 
-	            DA.SetData(2, debugText);
                 //Grasshopper.DataTree<object> test = new DataTree<object>();
                 //test.Add(paramIn, 0);
+
+                paramOut.ComputeData();
+
+                debugText += "\nparamOut.ToString() = ";
+                debugText += paramOut.ToString();
+
+ //               Brep temp;
+//                paramOut.CastTo<Brep>(out temp);
+
+
+				debugText += 
+
+	            DA.SetData(2, debugText);
 
                 DA.SetData(1, paramOut);
 

@@ -30,9 +30,9 @@ namespace Hairworm
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddTextParameter("String", "ClusterURL", "URL To Cluster", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Activate", "Activate", "Activate to emulate clsuter", GH_ParamAccess.item, false);
-            pManager.AddGeometryParameter("Input Geometry", "InputGeo", "InputGeometry", GH_ParamAccess.item);
+//            pManager.AddTextParameter("String", "ClusterURL", "URL To Cluster", GH_ParamAccess.item);
+//            pManager.AddBooleanParameter("Activate", "Activate", "Activate to emulate clsuter", GH_ParamAccess.item, false);
+//            pManager.AddGeometryParameter("Input Geometry", "InputGeo", "InputGeometry", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -61,9 +61,13 @@ namespace Hairworm
             //    This way, if the input parameters fail to supply valid data, we know when to abort.
 
             // 2. Retrieve input data, exit if non-existent
-            if (!DA.GetData(0, ref fileurl)) { return; }
-            if (!DA.GetData(1, ref activate)) { return; }
-            if (!DA.GetData(2, ref point)) { return; }
+//            if (!DA.GetData(0, ref fileurl)) { return; }
+//            if (!DA.GetData(1, ref activate)) { return; }
+//            if (!DA.GetData(2, ref point)) { return; }
+
+            fileurl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMaker.ghcluster";
+            activate = true;
+
 
             string tempPath = System.IO.Path.GetTempPath();
             Uri uri = new Uri(fileurl);
@@ -93,6 +97,11 @@ namespace Hairworm
                 GH_Cluster thiscluster = new GH_Cluster();
                 thiscluster.CreateFromFilePath(fileurl);
 
+ //               Grasshopper.Kernel.Parameters.Param_Geometry paramOut = new Grasshopper.Kernel.Parameters.Param_Geometry();
+//                thiscluster.Params.RegisterOutputParam(paramOut);
+
+
+
 
 				//get parent document and add cluster to it
 //                GH_Document parentdoc = OnPingDocument();
@@ -100,11 +109,14 @@ namespace Hairworm
                 newdoc.AddObject(thiscluster, false);
 
                 newdoc.CreateAutomaticClusterHooks();
+                newdoc.ExpireSolution();
+                debugText += "\nfindclusters comp = " + string.Join(", ", newdoc.FindClusters(thiscluster.ComponentGuid));
+                debugText += "\nfindclusters = " + string.Join(", ",newdoc.FindClusters(thiscluster.InstanceGuid));
+                debugText += string.Join(", ",newdoc.EnabledObjects());
                 debugText += newdoc.ClusterOutputHooks();
-                debugText += newdoc.ContainsClusterHooks();
+                debugText += string.Join(", ", newdoc.ContainsClusterHooks());
 
                 debugText += "yoy";
-            DA.SetData(2, debugText);
 
 //                Grasshopper.Kernel.Parameters.Param_Point paramIn = new Grasshopper.Kernel.Parameters.Param_Point();
 
@@ -117,7 +129,7 @@ namespace Hairworm
 //                paramIn.SetPersistentData(point);
 
 //                cluster.Params.RegisterInputParam(paramIn);
-                thiscluster.Params.RegisterOutputParam(paramOut);
+//                thiscluster.Params.RegisterOutputParam(paramOut);
 
 
 
@@ -125,7 +137,11 @@ namespace Hairworm
 
                 thiscluster.ComputeData();
 
+                thiscluster.ExpireSolution(true);
 
+                debugText += "\ncluster output = " + string.Join(", ", thiscluster.Params.Output);
+
+	            DA.SetData(2, debugText);
                 //Grasshopper.DataTree<object> test = new DataTree<object>();
                 //test.Add(paramIn, 0);
 

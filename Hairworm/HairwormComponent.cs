@@ -40,7 +40,7 @@ namespace Hairworm
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGeometryParameter("Output Geometry", "OutputGe2o", "OutputGeometry", GH_ParamAccess.tree);
+            pManager.AddGeometryParameter("Output Geometry", "OutputGe32o", "OutputGeometry", GH_ParamAccess.tree);
             pManager.AddGenericParameter("Generic Output", "GenericOutput", "GenericOutput", GH_ParamAccess.tree);
             pManager.AddTextParameter("Debug", "Debug", "This is debug output", GH_ParamAccess.item); 
         }
@@ -104,7 +104,8 @@ namespace Hairworm
 				//get parent document and add cluster to it
 //                GH_Document parentdoc = OnPingDocument();
                 GH_Document newdoc = new GH_Document();
-                newdoc.AddObject(thiscluster, false);
+                newdoc.AddObject(thiscluster, true);
+
 
 
 
@@ -128,32 +129,37 @@ namespace Hairworm
 				// AND I SHOULD FIX THIS THING
 				// SO I CAN GET DATA FROM THIS PARAMETER
 				// THIS IS SO THAT THIS WIL BREKA
-				fjdskal;fjdksal;f
-				GH_Param<GH_Brep> newparam = new GH_Param<GH_Brep>;
+//				GH_Param<GH_Brep> newparam = new GH_Param<GH_Brep>;
 
                 Grasshopper.Kernel.Parameters.Param_Geometry paramOut = new Grasshopper.Kernel.Parameters.Param_Geometry();
-//                Grasshopper.Kernel.GH_Param paramOut = new Grasshopper.Kernel.GH_Param("Geometry");
+//                new Grasshopper.Kernel.GH_Param<Grasshopper.Kernel.Types.GH_Brep>();
+//                Grasshopper.Kernel.GH_Param<Grasshopper.Kernel.Types.GH_Brep> paramOut = new Grasshopper.Kernel.GH_Param<Grasshopper.Kernel.Types.GH_Brep>();
 
 //                paramIn.SetPersistentData(point);
 
 //                cluster.Params.RegisterInputParam(paramIn);
 //                thiscluster.Params.RegisterOutputParam(paramOut);
 
+
                 thiscluster.Params.RegisterOutputParam(paramOut);
 
 
-                thiscluster.CollectData();
 
                 thiscluster.ComputeData();
+                thiscluster.CollectData();
+
+                newdoc.ExpireSolution();
 
                 thiscluster.ExpireSolution(true);
 
 
+                debugText += "\nkind = " + paramOut.Kind;
                 debugText += "\ncluster output = " + string.Join(", ", thiscluster.Params.Output);
 
                 //Grasshopper.DataTree<object> test = new DataTree<object>();
                 //test.Add(paramIn, 0);
 
+                paramOut.CollectData();
                 paramOut.ComputeData();
 
                 debugText += "\nparamOut.ToString() = ";
@@ -163,10 +169,13 @@ namespace Hairworm
 //                paramOut.CastTo<Brep>(out temp);
 
 
-				debugText += 
+                debugText += "instanceguid = " + paramOut.InstanceGuid;
+                debugText += "datamappingk = " + paramOut.DataMapping;
+                debugText += paramOut.SubCategory;
 
 	            DA.SetData(2, debugText);
 
+                DA.SetData(0, new Rhino.Geometry.Circle(4.3));
                 DA.SetData(1, paramOut);
 
 

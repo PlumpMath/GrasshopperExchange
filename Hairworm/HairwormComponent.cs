@@ -35,6 +35,8 @@ namespace Hairworm
 //            pManager.AddTextParameter("String", "ClusterURL", "URL To Cluster", GH_ParamAccess.item);
 //            pManager.AddBooleanParameter("Activate", "Activate", "Activate to emulate clsuter", GH_ParamAccess.item, false);
 //            pManager.AddGeometryParameter("Input Geometry", "InputGeo", "InputGeometry", GH_ParamAccess.item);
+              pManager.AddNumberParameter("Input Value", "InputVal", "InputValue", GH_ParamAccess.item);
+//              pManager[0].Optional = true;
         }
 
         /// <summary>
@@ -58,6 +60,8 @@ namespace Hairworm
             // Declare a variable for the input String
             string fileurl = null;
             bool activate = false;
+            double radius;
+            Grasshopper.Kernel.Types.GH_Number blah = new Grasshopper.Kernel.Types.GH_Number();
             Rhino.Geometry.Point3d point = Rhino.Geometry.Point3d.Unset;
             // 1. Declare placeholder variables and assign initial invalid data.
             //    This way, if the input parameters fail to supply valid data, we know when to abort.
@@ -65,10 +69,11 @@ namespace Hairworm
             // 2. Retrieve input data, exit if non-existent
 //            if (!DA.GetData(0, ref fileurl)) { return; }
 //            if (!DA.GetData(1, ref activate)) { return; }
-//            if (!DA.GetData(2, ref point)) { return; }
+            if (!DA.GetData(0, ref blah)) { return; }
+            radius = blah.Value;
 
 			//temporary fire url
-            fileurl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMaker.ghcluster";
+            fileurl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
             activate = true;
 
 			// get temp. get filename.
@@ -88,12 +93,13 @@ namespace Hairworm
 			// actually run this.
             if (activate)
             {
-/*				// attempt to download file
+				/*
+				// attempt to download file
 				using (WebClient Client = new WebClient())
 				{
 					Client.DownloadFile(fileurl, tempPath + filename);
 				}
-*/
+				*/
 				// if gh file doesn't exist, abort 
 				if (!File.Exists(tempPath + filename)) { return; }
 
@@ -101,11 +107,21 @@ namespace Hairworm
                 GH_Cluster thiscluster = new GH_Cluster();
                 thiscluster.CreateFromFilePath(tempPath + filename);
 
+                //GH_Param<Grasshopper.Kernel.Types.GH_Number> radiusParam = new GH_Param<Grasshopper.Kernel.Types.GH_Number>();
+				//radiusParam.VolatileData.
+				//thiscluster.Params.RegisterInputParam(radius, 0);
+                //IGH_Structure radparam = new IGH_Structure();
+
+                thiscluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
+                debugText += "\ninputtypename = " + thiscluster.Params.Input[0].TypeName;
+
+
 				//get new document, enable it, and add cluster to it
                 GH_Document newdoc = new GH_Document();
                 newdoc.Enabled = true;
                 newdoc.AddObject(thiscluster, true, 0);
 
+                debugText += "\nradisu = " + radius;
                 debugText += "\noutputcount = " + thiscluster.Params.Output.Count;
 
 				// Get a pointer to the data inside the first cluster output.

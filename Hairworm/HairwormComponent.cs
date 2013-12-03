@@ -32,11 +32,11 @@ namespace Hairworm
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-//            pManager.AddTextParameter("String", "ClusterURL", "URL To Cluster", GH_ParamAccess.item);
-//            pManager.AddBooleanParameter("Activate", "Activate", "Activate to emulate clsuter", GH_ParamAccess.item, false);
+            pManager.AddNumberParameter("Input Value", "InputVal", "InputValue", GH_ParamAccess.item);
+            pManager[0].Optional = true;
+            pManager.AddTextParameter("String", "ClusterURL", "URL To Cluster", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Download", "Download", "Download clsuter", GH_ParamAccess.item, false);
 //            pManager.AddGeometryParameter("Input Geometry", "InputGeo", "InputGeometry", GH_ParamAccess.item);
-              pManager.AddNumberParameter("Input Value", "InputVal", "InputValue", GH_ParamAccess.item);
-//              pManager[0].Optional = true;
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Hairworm
 
             // Declare a variable for the input String
             string fileurl = null;
-            bool activate = false;
+            bool download = false;
             double radius;
             Grasshopper.Kernel.Types.GH_Number blah = new Grasshopper.Kernel.Types.GH_Number();
             Rhino.Geometry.Point3d point = Rhino.Geometry.Point3d.Unset;
@@ -67,14 +67,13 @@ namespace Hairworm
             //    This way, if the input parameters fail to supply valid data, we know when to abort.
 
             // 2. Retrieve input data, exit if non-existent
-//            if (!DA.GetData(0, ref fileurl)) { return; }
-//            if (!DA.GetData(1, ref activate)) { return; }
             if (!DA.GetData(0, ref blah)) { return; }
+            if (!DA.GetData(1, ref fileurl)) { return; }
+            if (!DA.GetData(2, ref download)) { return; }
             radius = blah.Value;
 
 			//temporary fire url
-            fileurl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
-            activate = true;
+//            fileurl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
 
 			// get temp. get filename.
             string tempPath = System.IO.Path.GetTempPath();
@@ -90,60 +89,58 @@ namespace Hairworm
             // If the retrieved data is Nothing, we need to abort.
             if (fileurl == null) { return; }
 
-			// actually run this.
-            if (activate)
+			// attempt to download file
+            if (download)
             {
-				/*
-				// attempt to download file
 				using (WebClient Client = new WebClient())
 				{
 					Client.DownloadFile(fileurl, tempPath + filename);
 				}
-				*/
-				// if gh file doesn't exist, abort 
-				if (!File.Exists(tempPath + filename)) { return; }
-
-				// create a cluster
-                GH_Cluster thiscluster = new GH_Cluster();
-                thiscluster.CreateFromFilePath(tempPath + filename);
-
-                //GH_Param<Grasshopper.Kernel.Types.GH_Number> radiusParam = new GH_Param<Grasshopper.Kernel.Types.GH_Number>();
-				//radiusParam.VolatileData.
-				//thiscluster.Params.RegisterInputParam(radius, 0);
-                //IGH_Structure radparam = new IGH_Structure();
-
-                thiscluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
-                debugText += "\ninputtypename = " + thiscluster.Params.Input[0].TypeName;
-
-
-				//get new document, enable it, and add cluster to it
-                GH_Document newdoc = new GH_Document();
-                newdoc.Enabled = true;
-                newdoc.AddObject(thiscluster, true, 0);
-
-                debugText += "\nradisu = " + radius;
-                debugText += "\noutputcount = " + thiscluster.Params.Output.Count;
-
-				// Get a pointer to the data inside the first cluster output.
-                IGH_Structure data = thiscluster.Params.Output[0].VolatileData;
-
-                // Create a copy of this data (the original data will be wiped)
-                DataTree<object> copy = new DataTree<object>();
-                copy.MergeStructure(data, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
-
-                // Cleanup!
-                newdoc.Enabled = false;
-                newdoc.RemoveObject(thiscluster, false);
-                newdoc.Dispose();
-                newdoc = null;
-
-				// Output
-	            DA.SetData(2, debugText);
-                DA.SetDataTree(0, copy); //new Rhino.Geometry.Circle(4.3));
-                DA.SetDataTree(1, copy);
-
-
             }
+
+			// if gh file doesn't exist, abort 
+			if (!File.Exists(tempPath + filename)) { return; }
+
+			// create a cluster
+			GH_Cluster thiscluster = new GH_Cluster();
+			thiscluster.CreateFromFilePath(tempPath + filename);
+
+			//GH_Param<Grasshopper.Kernel.Types.GH_Number> radiusParam = new GH_Param<Grasshopper.Kernel.Types.GH_Number>();
+			//radiusParam.VolatileData.
+			//thiscluster.Params.RegisterInputParam(radius, 0);
+			//IGH_Structure radparam = new IGH_Structure();
+
+			thiscluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
+			debugText += "\ninputtypename = " + thiscluster.Params.Input[0].TypeName;
+
+
+			//get new document, enable it, and add cluster to it
+			GH_Document newdoc = new GH_Document();
+			newdoc.Enabled = true;
+			newdoc.AddObject(thiscluster, true, 0);
+
+			debugText += "\nradisu = " + radius;
+			debugText += "\noutputcount = " + thiscluster.Params.Output.Count;
+
+			// Get a pointer to the data inside the first cluster output.
+			IGH_Structure data = thiscluster.Params.Output[0].VolatileData;
+
+			// Create a copy of this data (the original data will be wiped)
+			DataTree<object> copy = new DataTree<object>();
+			copy.MergeStructure(data, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
+
+			// Cleanup!
+			newdoc.Enabled = false;
+			newdoc.RemoveObject(thiscluster, false);
+			newdoc.Dispose();
+			newdoc = null;
+
+			// Output
+			DA.SetData(2, debugText);
+			DA.SetDataTree(0, copy); //new Rhino.Geometry.Circle(4.3));
+			DA.SetDataTree(1, copy);
+
+
         }
 
         /// <summary>

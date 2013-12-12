@@ -28,6 +28,9 @@ namespace Hairworm
 		private int fixedParamNumOutput = 1;
   //      HairwormComponent self = new HairwormComponent();
 
+		string clusterFileUrl = null;
+		bool downloadCluster = false;
+
 		#region Methods of GH_Component interface
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -73,47 +76,46 @@ namespace Hairworm
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            // Declare a variable for the input String
-            string fileurl = null;
-            bool download = false;
-            clusterParamNumOutput = 3;
-            double radius;
-            Grasshopper.Kernel.Types.GH_Number blah = new Grasshopper.Kernel.Types.GH_Number();
-            Rhino.Geometry.Point3d point = Rhino.Geometry.Point3d.Unset;
-            // 1. Declare placeholder variables and assign initial invalid data.
-            //    This way, if the input parameters fail to supply valid data, we know when to abort.
-
             // 2. Retrieve input data, exit if non-existent
-//            if (!DA.GetData(0, ref blah)) { return; }
-            if (!DA.GetData(0, ref fileurl)) { return; }
-            if (!DA.GetData(1, ref download)) { return; }
-//            if (!DA.GetData(3, ref clusterParamNumOutput)) { return; }
+            if (!DA.GetData(0, ref clusterFileUrl)) { return; }
+            if (!DA.GetData(1, ref downloadCluster)) { return; }
+
+
+            // find out number of additional parameters and assign input data
+            if (Params.Input.Count == (fixedParamNumInput + clusterParamNumInput))
+            {
+				// Assign input params
+                for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
+                {
+					if (!DA.GetData(1, ref downloadCluster)) { return; }
+                }
+            }
 
             radius = 3.0; // blah.Value;
 
             //temporary fire url
-            //            fileurl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
+            //            clusterFileUrl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
 
             // get temp. get filename.
             string tempPath = System.IO.Path.GetTempPath();
-            Uri uri = new Uri(fileurl);
+            Uri uri = new Uri(clusterFileUrl);
             string filename = System.IO.Path.GetFileName(uri.LocalPath);
 
             string debugText = "";
-            debugText += "client.downloadfile( " + fileurl + ", " + filename + " );\n";
+            debugText += "client.downloadfile( " + clusterFileUrl + ", " + filename + " );\n";
             debugText += tempPath;
 
             DA.SetData(0, debugText);
 
             // If the retrieved data is Nothing, we need to abort.
-            if (fileurl == null) { return; }
+            if (clusterFileUrl == null) { return; }
 /*
-            // attempt to download file
-            if (download)
+            // attempt to downloadCluster file
+            if (downloadCluster)
             {
                 using (WebClient Client = new WebClient())
                 {
-                    Client.DownloadFile(fileurl, tempPath + filename);
+                    Client.DownloadFile(clusterFileUrl, tempPath + filename);
                 }
             }
 */

@@ -186,7 +186,7 @@ namespace Hairworm
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("{99170264-7e33-48c9-81b9-33d56842aaec}"); }
+            get { return new Guid("99170264-7e33-48c9-81b9-33d56842aaec"); }
         }
 
         public override void CreateAttributes()
@@ -256,18 +256,21 @@ namespace Hairworm
 
         public void MatchParameterCount()
         {
-//            while (clusterParamNumOutput != Params.Output.Count - fixedParamNumOutput)
-//            {
-/*                if (clusterParamNumOutput > Params.Output.Count - fixedParamNumOutput)
-                {
+            while (clusterParamNumOutput != (Params.Output.Count - fixedParamNumOutput))
+            {
+                if (clusterParamNumOutput > (Params.Output.Count - fixedParamNumOutput))
                     Params.RegisterOutputParam(new Param_GenericObject());
-                }
-                if (clusterParamNumOutput < Params.Output.Count - fixedParamNumOutput)
-                {
+				else
                     Params.UnregisterOutputParameter(Params.Output[Params.Output.Count - 1]);
-                }
-//            }*/
-//            this.OnAttributesChanged();
+            }
+            while (clusterParamNumInput != (Params.Input.Count - fixedParamNumInput))
+            {
+                if (clusterParamNumInput > (Params.Input.Count - fixedParamNumInput))
+                    Params.RegisterInputParam(new Param_GenericObject());
+				else
+                    Params.UnregisterInputParameter(Params.Input[Params.Input.Count - 1]);
+            }
+            this.ExpireSolution(true);
         }
 
         #endregion
@@ -302,7 +305,7 @@ namespace Hairworm
 
             if (channel == GH_CanvasChannel.Objects)
             {
-                GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Param Refresh", 2, 0);
+                GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Param RRERefresh", 2, 0);
                 button.Render(graphics, Selected, Owner.Locked, false);
                 button.Dispose();
             }
@@ -314,7 +317,7 @@ namespace Hairworm
                 System.Drawing.RectangleF rec = ButtonBounds;
                 if (rec.Contains(e.CanvasLocation))
                 {
-                    MessageBox.Show("The button was clicked, and we want " + (base.Owner as HairwormComponent).clusterParamNumOutput + " output params", "Button", MessageBoxButtons.OK);
+                    MessageBox.Show("The button was clicked, and we want " + (base.Owner as HairwormComponent).clusterParamNumInput + " inputs and " + (base.Owner as HairwormComponent).clusterParamNumOutput + " output params", "Button", MessageBoxButtons.OK);
                     (base.Owner as HairwormComponent).MatchParameterCount();
 
                     return GH_ObjectResponse.Handled;

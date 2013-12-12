@@ -1,18 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Windows.Forms;
 using System.IO;
 using System.Net;
 
+
 using Grasshopper;
+using Grasshopper.GUI;
+using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Attributes;
+using Grasshopper.Kernel.Parameters;
+using Grasshopper.Kernel.Types;
 using Grasshopper.Kernel.Special;
 using Grasshopper.Kernel.Data;
 using Rhino.Geometry;
 
 namespace Hairworm
 {
-    public class HairwormComponent : GH_Component
+
+    public class HairwormComponent : GH_Component, IGH_VariableParameterComponent
     {
+
+		public int clusterParamNumInput = 0;
+		public int clusterParamNumOutput = 0;
+		private int fixedParamNumInput = 2;
+		private int fixedParamNumOutput = 1;
+  //      HairwormComponent self = new HairwormComponent();
+
+		#region Methods of GH_Component interface
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
         /// constructor without any arguments.
@@ -32,11 +48,11 @@ namespace Hairworm
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddNumberParameter("Input Value", "InputVal", "InputValue", GH_ParamAccess.item);
-            pManager[0].Optional = true;
             pManager.AddTextParameter("String", "ClusterURL", "URL To Cluster", GH_ParamAccess.item);
             pManager.AddBooleanParameter("Download", "Download", "Download clsuter", GH_ParamAccess.item, false);
-//            pManager.AddGeometryParameter("Input Geometry", "InputGeo", "InputGeometry", GH_ParamAccess.item);
+//            pManager.AddNumberParameter("Input Value", "InputVal", "InputValue", GH_ParamAccess.item);
+//            pManager[0].Optional = true;
+            //            pManager.AddGeometryParameter("Input Geometry", "InputGeo", "InputGeometry", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -44,9 +60,9 @@ namespace Hairworm
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGeometryParameter("Output Geometry", "OutputGe32o", "OutputGeometry", GH_ParamAccess.tree);
-            pManager.AddGenericParameter("Generic Output", "GenericOutput", "GenericOutput", GH_ParamAccess.tree);
-            pManager.AddTextParameter("Debug", "Debug", "This is debug output", GH_ParamAccess.item); 
+//            pManager.AddGeometryParameter("Output Geometry", "OutputGe32o", "OutputGeometry", GH_ParamAccess.tree);
+//            pManager.AddGenericParameter("Generic Output", "GenericOutput", "GenericOutput", GH_ParamAccess.tree);
+            pManager.AddTextParameter("Debug", "Debug", "This is debug output", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -60,6 +76,7 @@ namespace Hairworm
             // Declare a variable for the input String
             string fileurl = null;
             bool download = false;
+            clusterParamNumOutput = 3;
             double radius;
             Grasshopper.Kernel.Types.GH_Number blah = new Grasshopper.Kernel.Types.GH_Number();
             Rhino.Geometry.Point3d point = Rhino.Geometry.Point3d.Unset;
@@ -67,15 +84,17 @@ namespace Hairworm
             //    This way, if the input parameters fail to supply valid data, we know when to abort.
 
             // 2. Retrieve input data, exit if non-existent
-            if (!DA.GetData(0, ref blah)) { return; }
-            if (!DA.GetData(1, ref fileurl)) { return; }
-            if (!DA.GetData(2, ref download)) { return; }
-            radius = blah.Value;
+//            if (!DA.GetData(0, ref blah)) { return; }
+            if (!DA.GetData(0, ref fileurl)) { return; }
+            if (!DA.GetData(1, ref download)) { return; }
+//            if (!DA.GetData(3, ref clusterParamNumOutput)) { return; }
 
-			//temporary fire url
-//            fileurl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
+            radius = 3.0; // blah.Value;
 
-			// get temp. get filename.
+            //temporary fire url
+            //            fileurl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
+
+            // get temp. get filename.
             string tempPath = System.IO.Path.GetTempPath();
             Uri uri = new Uri(fileurl);
             string filename = System.IO.Path.GetFileName(uri.LocalPath);
@@ -84,62 +103,65 @@ namespace Hairworm
             debugText += "client.downloadfile( " + fileurl + ", " + filename + " );\n";
             debugText += tempPath;
 
-            DA.SetData(2, debugText);
+            DA.SetData(0, debugText);
 
             // If the retrieved data is Nothing, we need to abort.
             if (fileurl == null) { return; }
-
-			// attempt to download file
+/*
+            // attempt to download file
             if (download)
             {
-				using (WebClient Client = new WebClient())
-				{
-					Client.DownloadFile(fileurl, tempPath + filename);
-				}
+                using (WebClient Client = new WebClient())
+                {
+                    Client.DownloadFile(fileurl, tempPath + filename);
+                }
             }
+*/
+            // if gh file doesn't exist, abort 
+            if (!File.Exists(tempPath + filename)) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "File does not exist!"); return; }
 
-			// if gh file doesn't exist, abort 
-			if (!File.Exists(tempPath + filename)) { return; }
+            // create a cluster
+            GH_Cluster thiscluster = new GH_Cluster();
+            thiscluster.CreateFromFilePath(tempPath + filename);
 
-			// create a cluster
-			GH_Cluster thiscluster = new GH_Cluster();
-			thiscluster.CreateFromFilePath(tempPath + filename);
+            thiscluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
+            debugText += "\ninputtypename = " + thiscluster.Params.Input[0].TypeName;
 
-			//GH_Param<Grasshopper.Kernel.Types.GH_Number> radiusParam = new GH_Param<Grasshopper.Kernel.Types.GH_Number>();
-			//radiusParam.VolatileData.
-			//thiscluster.Params.RegisterInputParam(radius, 0);
-			//IGH_Structure radparam = new IGH_Structure();
+			clusterParamNumInput = thiscluster.Params.Input.Count;
+			clusterParamNumOutput = thiscluster.Params.Output.Count;
+            debugText += "\ncluster input params # = " + clusterParamNumInput;
+            debugText += "\ncluster output params # = " + clusterParamNumOutput;
 
-			thiscluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
-			debugText += "\ninputtypename = " + thiscluster.Params.Input[0].TypeName;
+            //GH_Param temptype = new IGH_Param();
 
 
-			//get new document, enable it, and add cluster to it
-			GH_Document newdoc = new GH_Document();
-			newdoc.Enabled = true;
-			newdoc.AddObject(thiscluster, true, 0);
+            //get new document, enable it, and add cluster to it
+            GH_Document newdoc = new GH_Document();
+            newdoc.Enabled = true;
+            newdoc.AddObject(thiscluster, true, 0);
 
-			debugText += "\nradisu = " + radius;
-			debugText += "\noutputcount = " + thiscluster.Params.Output.Count;
+            debugText += "\nradisu = " + radius;
+            debugText += "\noutputcount = " + thiscluster.Params.Output.Count;
+            DA.SetData(0, debugText);
 
-			// Get a pointer to the data inside the first cluster output.
-			IGH_Structure data = thiscluster.Params.Output[0].VolatileData;
+            // Get a pointer to the data inside the first cluster output.
+            IGH_Structure data = thiscluster.Params.Output[0].VolatileData;
 
-			// Create a copy of this data (the original data will be wiped)
-			DataTree<object> copy = new DataTree<object>();
-			copy.MergeStructure(data, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
+            // Create a copy of this data (the original data will be wiped)
+            DataTree<object> copy = new DataTree<object>();
+            copy.MergeStructure(data, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
 
-			// Cleanup!
-			newdoc.Enabled = false;
-			newdoc.RemoveObject(thiscluster, false);
-			newdoc.Dispose();
-			newdoc = null;
+            // Cleanup!
+            newdoc.Enabled = false;
+            newdoc.RemoveObject(thiscluster, false);
+            newdoc.Dispose();
+            newdoc = null;
 
-			// Output
-			DA.SetData(2, debugText);
-			DA.SetDataTree(0, copy); //new Rhino.Geometry.Circle(4.3));
-			DA.SetDataTree(1, copy);
 
+            // Output
+            DA.SetData(0, debugText);
+//            DA.SetDataTree(0, copy); //new Rhino.Geometry.Circle(4.3));
+//            DA.SetDataTree(1, copy);
 
         }
 
@@ -166,5 +188,141 @@ namespace Hairworm
         {
             get { return new Guid("{99170264-7e33-48c9-81b9-33d56842aaec}"); }
         }
+
+        public override void CreateAttributes()
+        {
+            base.m_attributes = new Attributes_Custom(this);
+        }
+
+    #endregion
+
+		#region Methods of IGH_VariableParameterComponent interface
+
+
+        bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index)
+        {
+          /*  //We only let input parameters to be added (output number is fixed at one)
+            if (side == GH_ParameterSide.Input)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }*/
+			return true;
+        }
+
+        bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index)
+        {
+            return true;
+            //We can only remove if we have more than the 'fixed' param numbers
+            if(side == GH_ParameterSide.Input) {
+                if(Params.Input.Count > fixedParamNumInput)
+					return true;
+				else
+					return false;
+            } 
+            else {
+                if(Params.Output.Count > fixedParamNumOutput)
+					return true;
+				else
+					return false;
+            }
+        }
+        IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index)
+        {
+            Param_Number param = new Param_Number();
+
+ /*           param.Name = GH_ComponentParamServer.InventUniqueNickname("ABCDEFGHIJKLMNOPQRSTUVWXYZ", Params.Input);
+            param.NickName = param.Name;
+            param.Description = "Param" + (Params.Input.Count + 1);
+            param.SetPersistentData(0.0); */
+
+            return param;
+        }
+
+        bool IGH_VariableParameterComponent.DestroyParameter(GH_ParameterSide side, int index)
+        {
+            //Nothing to do here by the moment
+            return true;
+        }
+
+
+        void IGH_VariableParameterComponent.VariableParameterMaintenance()
+        {
+			//Nothing to do here by the moment
+		}
+
+        public void MatchParameterCount()
+        {
+//            while (clusterParamNumOutput != Params.Output.Count - fixedParamNumOutput)
+//            {
+/*                if (clusterParamNumOutput > Params.Output.Count - fixedParamNumOutput)
+                {
+                    Params.RegisterOutputParam(new Param_GenericObject());
+                }
+                if (clusterParamNumOutput < Params.Output.Count - fixedParamNumOutput)
+                {
+                    Params.UnregisterOutputParameter(Params.Output[Params.Output.Count - 1]);
+                }
+//            }*/
+//            this.OnAttributesChanged();
+        }
+
+        #endregion
     }
+    #region GH_ComponentAttributes interface
+
+    public class Attributes_Custom : Grasshopper.Kernel.Attributes.GH_ComponentAttributes
+    {
+        GH_Component thisowner = null;
+        public Attributes_Custom(GH_Component owner) : base(owner) { thisowner = owner; }
+
+        protected override void Layout()
+        {
+            base.Layout();
+
+            System.Drawing.Rectangle rec0 = GH_Convert.ToRectangle(Bounds);
+            rec0.Height += 22;
+
+            System.Drawing.Rectangle rec1 = rec0;
+            rec1.Y = rec1.Bottom - 22;
+            rec1.Height = 22;
+            rec1.Inflate(-2, -2);
+
+            Bounds = rec0;
+            ButtonBounds = rec1;
+        }
+        private System.Drawing.Rectangle ButtonBounds { get; set; }
+
+        protected override void Render(GH_Canvas canvas, System.Drawing.Graphics graphics, GH_CanvasChannel channel)
+        {
+            base.Render(canvas, graphics, channel);
+
+            if (channel == GH_CanvasChannel.Objects)
+            {
+                GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Param Refresh", 2, 0);
+                button.Render(graphics, Selected, Owner.Locked, false);
+                button.Dispose();
+            }
+        }
+        public override GH_ObjectResponse RespondToMouseDown(GH_Canvas sender, GH_CanvasMouseEvent e)
+        {
+            if (e.Button == System.Windows.Forms.MouseButtons.Left)
+            {
+                System.Drawing.RectangleF rec = ButtonBounds;
+                if (rec.Contains(e.CanvasLocation))
+                {
+                    MessageBox.Show("The button was clicked, and we want " + (base.Owner as HairwormComponent).clusterParamNumOutput + " output params", "Button", MessageBoxButtons.OK);
+                    (base.Owner as HairwormComponent).MatchParameterCount();
+
+                    return GH_ObjectResponse.Handled;
+
+                }
+            }
+            return base.RespondToMouseDown(sender, e);
+        }
+    }
+    #endregion GH_ComponentAttributes interface
 }

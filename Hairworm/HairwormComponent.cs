@@ -34,6 +34,9 @@ namespace Hairworm
 		string debugText = "";
         GH_ObjectWrapper[] clusterInputs = null;
 
+        GH_Cluster wormCluster = null;
+        GH_Document wormDoc = null;
+
 		#region Methods of GH_Component interface
         /// <summary>
         /// Each implementation of GH_Component must provide a public 
@@ -55,7 +58,7 @@ namespace Hairworm
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("String", "ClusterURL", "URL To Cluster", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Download", "Download", "Download clsuter", GH_ParamAccess.item, false);
+//            pManager.AddBooleanParameter("Download", "Download", "Download clsuter", GH_ParamAccess.item, false);
 //            pManager.AddNumberParameter("Input Value", "InputVal", "InputValue", GH_ParamAccess.item);
 //            pManager[0].Optional = true;
             //            pManager.AddGeometryParameter("Input Geometry", "InputGeo", "InputGeometry", GH_ParamAccess.item);
@@ -85,58 +88,19 @@ namespace Hairworm
             if (!DA.GetData(0, ref clusterFileUrl)) { return; }
 //            if (!DA.GetData(1, ref downloadCluster)) { return; }
 
-            //temporary file url
-            //            clusterFileUrl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
-
-            // set path for temporary file location
-            string tempPath = System.IO.Path.GetTempPath();
-            Uri uri = new Uri(clusterFileUrl);
-            string filename = System.IO.Path.GetFileName(uri.LocalPath);
-            fullTempFilePath = tempPath + filename; 
-
-/*
-			////////////////////////
-            // attempt to downloadCluster file
-			////////////////////////
-  
-            if (downloadCluster)
-            {
-                using (WebClient Client = new WebClient())
-                {
-                    Client.DownloadFile(clusterFileUrl, fullTempFilePath);
-                }
-            }
-            debugText += "client.downloadfile( " + clusterFileUrl + ", " + filename + " );\n";
-            debugText += tempPath;
-*/
-
-            // if gh file doesn't exist in temporary location, abort 
-            if (!File.Exists(fullTempFilePath)) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "File does not exist!"); return; }
-
-			////////////////////////
-            // Create a cluster
-			////////////////////////
-
-            GH_Cluster thiscluster = new GH_Cluster();
-            thiscluster.CreateFromFilePath(fullTempFilePath);
-
-			clusterParamNumInput = thiscluster.Params.Input.Count;
-			clusterParamNumOutput = thiscluster.Params.Output.Count;
-            debugText += "\ncluster input params # = " + clusterParamNumInput;
-            debugText += "\ncluster output params # = " + clusterParamNumOutput;
-
            //GH_Param temptype = new IGH_Param();
 
 			////////////////////////
-            // check if parameters are correct
+            // check if cluster was properly loaded, and if parameters are correct
 			// and if not, do something about it!
 			////////////////////////
-            if (Params.Input.Count != (fixedParamNumInput + clusterParamNumInput) ||
+            if (wormCluster == null ||
+                Params.Input.Count != (fixedParamNumInput + clusterParamNumInput) ||
                 Params.Output.Count != (fixedParamNumOutput + clusterParamNumOutput))
             {
                 //we've got a parameter mismatch
                 // urge user to click on buttom to match paramcount to cluster param count
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Parameter count is mismatched - click on 'Reload Cluster' button!");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cluster not loaded properly - click on 'Reload Cluster' button!");
             }
             else
             {
@@ -150,32 +114,32 @@ namespace Hairworm
                 // get data from array, put into cluster
                 for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
                 {
-                    thiscluster.Params.Input[i - fixedParamNumInput].AddVolatileData(new GH_Path(0), 0, clusterInputs[i - fixedParamNumInput]);
+                    wormCluster.Params.Input[i - fixedParamNumInput].AddVolatileData(new GH_Path(0), 0, clusterInputs[i - fixedParamNumInput]);
                 }
-                //            thiscluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
-                //            debugText += "\ninputtypename = " + thiscluster.Params.Input[0].TypeName;
+                //            wormCluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
+                //            debugText += "\ninputtypename = " + wormCluster.Params.Input[0].TypeName;
 
                 //get new document, enable it, and add cluster to it
-                GH_Document newdoc = new GH_Document();
-                newdoc.Enabled = true;
-                newdoc.AddObject(thiscluster, true, 0);
+                wormDoc = new GH_Document();
+                wormDoc.Enabled = true;
+                wormDoc.AddObject(wormCluster, true, 0);
 
                 //            debugText += "\nradisu = " + radius;
-                debugText += "\noutputcount = " + thiscluster.Params.Output.Count;
+                debugText += "\noutputcount = " + wormCluster.Params.Output.Count;
                 DA.SetData(0, debugText);
 
                 // Get a pointer to the data inside the first cluster output.
-                IGH_Structure data = thiscluster.Params.Output[0].VolatileData;
+                IGH_Structure data = wormCluster.Params.Output[0].VolatileData;
 
                 // Create a copy of this data (the original data will be wiped)
                 DataTree<object> copy = new DataTree<object>();
                 copy.MergeStructure(data, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
 
                 // Cleanup!
-                newdoc.Enabled = false;
-                newdoc.RemoveObject(thiscluster, false);
-                newdoc.Dispose();
-                newdoc = null;
+                wormDoc.Enabled = false;
+                wormDoc.RemoveObject(wormCluster, false);
+                wormDoc.Dispose();
+                wormDoc = null;
 
 
                 // Output
@@ -296,6 +260,52 @@ namespace Hairworm
             this.ExpireSolution(true);
         }
 
+        public void ReloadCluster()
+        {
+            //temporary file url
+            //            clusterFileUrl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
+
+            // set path for temporary file location
+            string tempPath = System.IO.Path.GetTempPath();
+            Uri uri = new Uri(clusterFileUrl);
+            string filename = System.IO.Path.GetFileName(uri.LocalPath);
+            fullTempFilePath = tempPath + filename; 
+
+/*
+			////////////////////////
+            // attempt to downloadCluster file
+			////////////////////////
+  
+            if (downloadCluster)
+            {
+                using (WebClient Client = new WebClient())
+                {
+                    Client.DownloadFile(clusterFileUrl, fullTempFilePath);
+                }
+            }
+            debugText += "client.downloadfile( " + clusterFileUrl + ", " + filename + " );\n";
+            debugText += tempPath;
+*/
+
+            // if gh file doesn't exist in temporary location, abort 
+            if (!File.Exists(fullTempFilePath)) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "File does not exist!"); return; }
+
+			////////////////////////
+            // Create a cluster
+			////////////////////////
+
+            wormCluster = new GH_Cluster();
+            wormCluster.CreateFromFilePath(fullTempFilePath);
+
+			clusterParamNumInput = wormCluster.Params.Input.Count;
+			clusterParamNumOutput = wormCluster.Params.Output.Count;
+            debugText += "\ncluster input params # = " + clusterParamNumInput;
+            debugText += "\ncluster output params # = " + clusterParamNumOutput;
+
+            MatchParameterCount();
+        }
+
+
         #endregion
     }
     #region GH_ComponentAttributes interface
@@ -340,8 +350,8 @@ namespace Hairworm
                 System.Drawing.RectangleF rec = ButtonBounds;
                 if (rec.Contains(e.CanvasLocation))
                 {
-                    MessageBox.Show("The button was clicked, and we want " + (base.Owner as HairwormComponent).clusterParamNumInput + " inputs and " + (base.Owner as HairwormComponent).clusterParamNumOutput + " output params", "Button", MessageBoxButtons.OK);
-                    (base.Owner as HairwormComponent).MatchParameterCount();
+                    (base.Owner as HairwormComponent).ReloadCluster();
+                    //MessageBox.Show("The button was clicked, and we want " + (base.Owner as HairwormComponent).clusterParamNumInput + " inputs and " + (base.Owner as HairwormComponent).clusterParamNumOutput + " output params", "Button", MessageBoxButtons.OK);
 
                     return GH_ObjectResponse.Handled;
 

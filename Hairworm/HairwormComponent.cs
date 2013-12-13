@@ -284,8 +284,8 @@ namespace Hairworm
 
                 }
 			}
-			debugText += "client.downloadfile( " + clusterFileUrl + ", " + filename + " );\n";
-            debugText += tempPath;
+			debugText += "Downloaded file " + clusterFileUrl + ", " + filename + "\n";
+            debugText += "into " + fullTempFilePath + "\n";
 
             // if gh file doesn't exist in temporary location, abort 
             if (!File.Exists(fullTempFilePath)) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "File does not exist!"); }

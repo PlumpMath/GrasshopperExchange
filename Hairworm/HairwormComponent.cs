@@ -29,7 +29,6 @@ namespace Hairworm
   //      HairwormComponent self = new HairwormComponent();
 
 		string clusterFileUrl = null;
-		bool downloadCluster = false;
 		string fullTempFilePath = null;
 		string debugText = "";
         GH_ObjectWrapper[] clusterInputs = null;
@@ -187,34 +186,16 @@ namespace Hairworm
 
         bool IGH_VariableParameterComponent.CanInsertParameter(GH_ParameterSide side, int index)
         {
-          /*  //We only let input parameters to be added (output number is fixed at one)
-            if (side == GH_ParameterSide.Input)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }*/
-			return true;
+			// we want this to be false, because we don't want those pesky users adding their own parameters
+			// (but what if a cluster is a variable-input one?)
+			// well, we'll deal with that later.
+			return false;
         }
 
         bool IGH_VariableParameterComponent.CanRemoveParameter(GH_ParameterSide side, int index)
         {
-            return true;
-            //We can only remove if we have more than the 'fixed' param numbers
-            if(side == GH_ParameterSide.Input) {
-                if(Params.Input.Count > fixedParamNumInput)
-					return true;
-				else
-					return false;
-            } 
-            else {
-                if(Params.Output.Count > fixedParamNumOutput)
-					return true;
-				else
-					return false;
-            }
+			// see above.
+            return false;
         }
         IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index)
         {
@@ -265,39 +246,47 @@ namespace Hairworm
             //temporary file url
             //            clusterFileUrl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
 
+			////////////////////////
             // set path for temporary file location
+			////////////////////////
+
             string tempPath = System.IO.Path.GetTempPath();
             Uri uri = new Uri(clusterFileUrl);
             string filename = System.IO.Path.GetFileName(uri.LocalPath);
             fullTempFilePath = tempPath + filename; 
 
-/*
+
 			////////////////////////
             // attempt to downloadCluster file
 			////////////////////////
   
-            if (downloadCluster)
-            {
-                using (WebClient Client = new WebClient())
-                {
-                    Client.DownloadFile(clusterFileUrl, fullTempFilePath);
+			using (WebClient Client = new WebClient())
+			{
+				try {
+					Client.DownloadFile(clusterFileUrl, fullTempFilePath);
                 }
-            }
-            debugText += "client.downloadfile( " + clusterFileUrl + ", " + filename + " );\n";
+				catch(WebException webEx)
+				{
+					AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Network error: " + webEx.Message);
+
+                }
+			}
+			debugText += "client.downloadfile( " + clusterFileUrl + ", " + filename + " );\n";
             debugText += tempPath;
-*/
 
             // if gh file doesn't exist in temporary location, abort 
-            if (!File.Exists(fullTempFilePath)) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "File does not exist!"); return; }
+            if (!File.Exists(fullTempFilePath)) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "File does not exist!"); }
 
 			////////////////////////
             // Create a cluster
 			////////////////////////
 
+			// create cluster
             wormCluster = new GH_Cluster();
             wormCluster.CreateFromFilePath(fullTempFilePath);
 
-			clusterParamNumInput = wormCluster.Params.Input.Count;
+			// set cluster parameter count
+            clusterParamNumInput = wormCluster.Params.Input.Count;
 			clusterParamNumOutput = wormCluster.Params.Output.Count;
             debugText += "\ncluster input params # = " + clusterParamNumInput;
             debugText += "\ncluster output params # = " + clusterParamNumOutput;

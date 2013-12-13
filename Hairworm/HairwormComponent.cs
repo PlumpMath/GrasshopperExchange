@@ -51,6 +51,19 @@ namespace Hairworm
         {
         }
 
+        public override void RemovedFromDocument(GH_Document document)
+        {
+			// let's be polite and pick up our garbage
+            if (wormDoc != null)
+            {
+                wormDoc.Enabled = false;
+                wormDoc.RemoveObject(wormCluster, false);
+                wormDoc.Dispose();
+                wormDoc = null;
+            }
+            base.RemovedFromDocument(document);
+        }
+
         /// <summary>
         /// Registers all the input parameters for this component.
         /// </summary>
@@ -110,40 +123,30 @@ namespace Hairworm
                 {
                     if (!DA.GetData(i, ref clusterInputs[i - fixedParamNumInput])) { return; }
                 }
-                // get data from array, put into cluster
+                // get data from array, input into cluster
                 for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
                 {
                     wormCluster.Params.Input[i - fixedParamNumInput].AddVolatileData(new GH_Path(0), 0, clusterInputs[i - fixedParamNumInput]);
                 }
                 //            wormCluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
                 //            debugText += "\ninputtypename = " + wormCluster.Params.Input[0].TypeName;
-
-                //get new document, enable it, and add cluster to it
-                wormDoc = new GH_Document();
-                wormDoc.Enabled = true;
-                wormDoc.AddObject(wormCluster, true, 0);
-
                 //            debugText += "\nradisu = " + radius;
-                debugText += "\noutputcount = " + wormCluster.Params.Output.Count;
-                DA.SetData(0, debugText);
+
+//                debugText += "\noutputcount = " + wormCluster.Params.Output.Count;
+
+				// I GUESS CLUSTER RUNS AUTOMATICALLY?
+//                wormCluster.ClearData();
 
                 // Get a pointer to the data inside the first cluster output.
-                IGH_Structure data = wormCluster.Params.Output[0].VolatileData;
+//                IGH_Structure data = wormCluster.Params.Output[0].VolatileData;
 
                 // Create a copy of this data (the original data will be wiped)
                 DataTree<object> copy = new DataTree<object>();
-                copy.MergeStructure(data, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
+                copy.MergeStructure(wormCluster.Params.Output[0].VolatileData, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
 
-                // Cleanup!
-                wormDoc.Enabled = false;
-                wormDoc.RemoveObject(wormCluster, false);
-                wormDoc.Dispose();
-                wormDoc = null;
-
-
-                // Output
-                //            DA.SetDataTree(0, copy); //new Rhino.Geometry.Circle(4.3));
+                // Output 
                 DA.SetDataTree(1, copy);
+
             }
 
             DA.SetData(0, debugText);
@@ -199,7 +202,7 @@ namespace Hairworm
         }
         IGH_Param IGH_VariableParameterComponent.CreateParameter(GH_ParameterSide side, int index)
         {
-            Param_Number param = new Param_Number();
+            Param_GenericObject param = new Param_GenericObject();
 
  /*           param.Name = GH_ComponentParamServer.InventUniqueNickname("ABCDEFGHIJKLMNOPQRSTUVWXYZ", Params.Input);
             param.NickName = param.Name;
@@ -223,6 +226,7 @@ namespace Hairworm
 
         public void MatchParameterCount()
         {
+			// delete/make as many output parameters as we need
             while (clusterParamNumOutput != (Params.Output.Count - fixedParamNumOutput))
             {
                 if (clusterParamNumOutput > (Params.Output.Count - fixedParamNumOutput))
@@ -230,6 +234,7 @@ namespace Hairworm
 				else
                     Params.UnregisterOutputParameter(Params.Output[Params.Output.Count - 1]);
             }
+			// delete/make as many input parameters as we need
             while (clusterParamNumInput != (Params.Input.Count - fixedParamNumInput))
             {
                 if (clusterParamNumInput > (Params.Input.Count - fixedParamNumInput))
@@ -238,19 +243,28 @@ namespace Hairworm
                     Params.UnregisterInputParameter(Params.Input[Params.Input.Count - 1]);
             }
             clusterInputs = new GH_ObjectWrapper[clusterParamNumInput];
-            this.ExpireSolution(true);
+            //ExpireSolution(true);
+
         }
 
         public void ReloadCluster()
         {
-            //temporary file url
+			// if we had a previous document, then let's delete it and start over
+            if (wormDoc != null)
+            {
+                wormDoc.Enabled = false;
+                wormDoc.RemoveObject(wormCluster, false);
+                wormDoc.Dispose();
+                wormDoc = null;
+            }
+
+//temporary file url
             //            clusterFileUrl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
 
 			////////////////////////
             // set path for temporary file location
 			////////////////////////
-
-            string tempPath = System.IO.Path.GetTempPath();
+                        string tempPath = System.IO.Path.GetTempPath();
             Uri uri = new Uri(clusterFileUrl);
             string filename = System.IO.Path.GetFileName(uri.LocalPath);
             fullTempFilePath = tempPath + filename; 
@@ -292,6 +306,13 @@ namespace Hairworm
             debugText += "\ncluster output params # = " + clusterParamNumOutput;
 
             MatchParameterCount();
+
+			//get new document, enable it, and add cluster to it
+			wormDoc = new GH_Document();
+			wormDoc.Enabled = true;
+			wormDoc.AddObject(wormCluster, true, 0);
+
+            ExpireSolution(true);
         }
 
 

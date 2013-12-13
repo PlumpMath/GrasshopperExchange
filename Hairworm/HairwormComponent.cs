@@ -24,7 +24,7 @@ namespace Hairworm
 
 		public int clusterParamNumInput = 0;
 		public int clusterParamNumOutput = 0;
-		private int fixedParamNumInput = 2;
+		private int fixedParamNumInput = 1;
 		private int fixedParamNumOutput = 1;
   //      HairwormComponent self = new HairwormComponent();
 
@@ -83,7 +83,7 @@ namespace Hairworm
             //  Retrieve crucial (fixed) input data, exit if non-existent
 			////////////////////////
             if (!DA.GetData(0, ref clusterFileUrl)) { return; }
-            if (!DA.GetData(1, ref downloadCluster)) { return; }
+//            if (!DA.GetData(1, ref downloadCluster)) { return; }
 
             //temporary file url
             //            clusterFileUrl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
@@ -128,56 +128,62 @@ namespace Hairworm
            //GH_Param temptype = new IGH_Param();
 
 			////////////////////////
-            // urge user to click on buttom to match paramcount to cluster param count
+            // check if parameters are correct
+			// and if not, do something about it!
 			////////////////////////
             if (Params.Input.Count != (fixedParamNumInput + clusterParamNumInput) ||
                 Params.Output.Count != (fixedParamNumOutput + clusterParamNumOutput))
             {
                 //we've got a parameter mismatch
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Parameter count is mismatched - click on 'Reload Parameter' button!");
+                // urge user to click on buttom to match paramcount to cluster param count
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Parameter count is mismatched - click on 'Reload Cluster' button!");
             }
             else
             {
-				//successful! parameters match. so:
-				// Assign input params
+                //successful! parameters match. so - let's run this thing:
+
+                //get data from hairworm inputs, put into array
                 for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
                 {
-					if (!DA.GetData(1, ref downloadCluster)) { return; }
+                    if (!DA.GetData(i, ref clusterInputs[i - fixedParamNumInput])) { return; }
                 }
+                // get data from array, put into cluster
+                for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
+                {
+                    thiscluster.Params.Input[i - fixedParamNumInput].AddVolatileData(new GH_Path(0), 0, clusterInputs[i - fixedParamNumInput]);
+                }
+                //            thiscluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
+                //            debugText += "\ninputtypename = " + thiscluster.Params.Input[0].TypeName;
+
+                //get new document, enable it, and add cluster to it
+                GH_Document newdoc = new GH_Document();
+                newdoc.Enabled = true;
+                newdoc.AddObject(thiscluster, true, 0);
+
+                //            debugText += "\nradisu = " + radius;
+                debugText += "\noutputcount = " + thiscluster.Params.Output.Count;
+                DA.SetData(0, debugText);
+
+                // Get a pointer to the data inside the first cluster output.
+                IGH_Structure data = thiscluster.Params.Output[0].VolatileData;
+
+                // Create a copy of this data (the original data will be wiped)
+                DataTree<object> copy = new DataTree<object>();
+                copy.MergeStructure(data, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
+
+                // Cleanup!
+                newdoc.Enabled = false;
+                newdoc.RemoveObject(thiscluster, false);
+                newdoc.Dispose();
+                newdoc = null;
+
+
+                // Output
+                //            DA.SetDataTree(0, copy); //new Rhino.Geometry.Circle(4.3));
+                DA.SetDataTree(1, copy);
             }
-			 
- 
-//            thiscluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
-//            debugText += "\ninputtypename = " + thiscluster.Params.Input[0].TypeName;
 
- 
-            //get new document, enable it, and add cluster to it
-            GH_Document newdoc = new GH_Document();
-            newdoc.Enabled = true;
-            newdoc.AddObject(thiscluster, true, 0);
-
-//            debugText += "\nradisu = " + radius;
-            debugText += "\noutputcount = " + thiscluster.Params.Output.Count;
             DA.SetData(0, debugText);
-
-            // Get a pointer to the data inside the first cluster output.
-            IGH_Structure data = thiscluster.Params.Output[0].VolatileData;
-
-            // Create a copy of this data (the original data will be wiped)
-            DataTree<object> copy = new DataTree<object>();
-            copy.MergeStructure(data, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
-
-            // Cleanup!
-            newdoc.Enabled = false;
-            newdoc.RemoveObject(thiscluster, false);
-            newdoc.Dispose();
-            newdoc = null;
-
-
-            // Output
-            DA.SetData(0, debugText);
-//            DA.SetDataTree(0, copy); //new Rhino.Geometry.Circle(4.3));
-//            DA.SetDataTree(1, copy);
 
         }
 
@@ -322,7 +328,7 @@ namespace Hairworm
 
             if (channel == GH_CanvasChannel.Objects)
             {
-                GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Reload Parameters", 2, 0);
+                GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Reload Cluster", 2, 0);
                 button.Render(graphics, Selected, Owner.Locked, false);
                 button.Dispose();
             }

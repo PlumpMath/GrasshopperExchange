@@ -30,6 +30,9 @@ namespace Hairworm
 
 		string clusterFileUrl = null;
 		bool downloadCluster = false;
+		string fullTempFilePath = null;
+		string debugText = "";
+        GH_ObjectWrapper[] clusterInputs = null;
 
 		#region Methods of GH_Component interface
         /// <summary>
@@ -76,73 +79,84 @@ namespace Hairworm
         protected override void SolveInstance(IGH_DataAccess DA)
         {
 
-            // 2. Retrieve input data, exit if non-existent
+			////////////////////////
+            //  Retrieve crucial (fixed) input data, exit if non-existent
+			////////////////////////
             if (!DA.GetData(0, ref clusterFileUrl)) { return; }
             if (!DA.GetData(1, ref downloadCluster)) { return; }
 
-
-            // find out number of additional parameters and assign input data
-            if (Params.Input.Count == (fixedParamNumInput + clusterParamNumInput))
-            {
-				// Assign input params
-                for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
-                {
-					if (!DA.GetData(1, ref downloadCluster)) { return; }
-                }
-            }
-
-            radius = 3.0; // blah.Value;
-
-            //temporary fire url
+            //temporary file url
             //            clusterFileUrl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
 
-            // get temp. get filename.
+            // set path for temporary file location
             string tempPath = System.IO.Path.GetTempPath();
             Uri uri = new Uri(clusterFileUrl);
             string filename = System.IO.Path.GetFileName(uri.LocalPath);
+            fullTempFilePath = tempPath + filename; 
 
-            string debugText = "";
-            debugText += "client.downloadfile( " + clusterFileUrl + ", " + filename + " );\n";
-            debugText += tempPath;
-
-            DA.SetData(0, debugText);
-
-            // If the retrieved data is Nothing, we need to abort.
-            if (clusterFileUrl == null) { return; }
 /*
+			////////////////////////
             // attempt to downloadCluster file
+			////////////////////////
+  
             if (downloadCluster)
             {
                 using (WebClient Client = new WebClient())
                 {
-                    Client.DownloadFile(clusterFileUrl, tempPath + filename);
+                    Client.DownloadFile(clusterFileUrl, fullTempFilePath);
                 }
             }
+            debugText += "client.downloadfile( " + clusterFileUrl + ", " + filename + " );\n";
+            debugText += tempPath;
 */
-            // if gh file doesn't exist, abort 
-            if (!File.Exists(tempPath + filename)) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "File does not exist!"); return; }
 
-            // create a cluster
+            // if gh file doesn't exist in temporary location, abort 
+            if (!File.Exists(fullTempFilePath)) { AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "File does not exist!"); return; }
+
+			////////////////////////
+            // Create a cluster
+			////////////////////////
+
             GH_Cluster thiscluster = new GH_Cluster();
-            thiscluster.CreateFromFilePath(tempPath + filename);
-
-            thiscluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
-            debugText += "\ninputtypename = " + thiscluster.Params.Input[0].TypeName;
+            thiscluster.CreateFromFilePath(fullTempFilePath);
 
 			clusterParamNumInput = thiscluster.Params.Input.Count;
 			clusterParamNumOutput = thiscluster.Params.Output.Count;
             debugText += "\ncluster input params # = " + clusterParamNumInput;
             debugText += "\ncluster output params # = " + clusterParamNumOutput;
 
-            //GH_Param temptype = new IGH_Param();
+           //GH_Param temptype = new IGH_Param();
 
+			////////////////////////
+            // urge user to click on buttom to match paramcount to cluster param count
+			////////////////////////
+            if (Params.Input.Count != (fixedParamNumInput + clusterParamNumInput) ||
+                Params.Output.Count != (fixedParamNumOutput + clusterParamNumOutput))
+            {
+                //we've got a parameter mismatch
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Parameter count is mismatched - click on 'Reload Parameter' button!");
+            }
+            else
+            {
+				//successful! parameters match. so:
+				// Assign input params
+                for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
+                {
+					if (!DA.GetData(1, ref downloadCluster)) { return; }
+                }
+            }
+			 
+ 
+//            thiscluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
+//            debugText += "\ninputtypename = " + thiscluster.Params.Input[0].TypeName;
 
+ 
             //get new document, enable it, and add cluster to it
             GH_Document newdoc = new GH_Document();
             newdoc.Enabled = true;
             newdoc.AddObject(thiscluster, true, 0);
 
-            debugText += "\nradisu = " + radius;
+//            debugText += "\nradisu = " + radius;
             debugText += "\noutputcount = " + thiscluster.Params.Output.Count;
             DA.SetData(0, debugText);
 
@@ -188,7 +202,7 @@ namespace Hairworm
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("99170264-7e33-48c9-81b9-33d56842aaec"); }
+            get { return new Guid("{99170264-7e33-48c9-81b9-33d56842aaec}"); }
         }
 
         public override void CreateAttributes()
@@ -272,6 +286,7 @@ namespace Hairworm
 				else
                     Params.UnregisterInputParameter(Params.Input[Params.Input.Count - 1]);
             }
+            clusterInputs = new GH_ObjectWrapper[clusterParamNumInput];
             this.ExpireSolution(true);
         }
 
@@ -307,7 +322,7 @@ namespace Hairworm
 
             if (channel == GH_CanvasChannel.Objects)
             {
-                GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Param RRERefresh", 2, 0);
+                GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Reload Parameters", 2, 0);
                 button.Render(graphics, Selected, Owner.Locked, false);
                 button.Dispose();
             }

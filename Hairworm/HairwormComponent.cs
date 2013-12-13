@@ -248,6 +248,9 @@ namespace Hairworm
             }
             //clusterInputs = new GH_ObjectWrapper[clusterParamNumInput];
             clusterInputs = new GH_Number[clusterParamNumInput];
+
+			//refresh parameters! since they changed.
+            Params.OnParametersChanged();
         }
 
         public void InitCluster()
@@ -368,16 +371,6 @@ namespace Hairworm
                 {
                     (base.Owner as HairwormComponent).InitCluster();
 
-                    (base.Owner as HairwormComponent).ExpireSolution(true);
-                    ExpireLayout();
-                    base.ExpireLayout();
-                    Layout();
-                    base.Layout();
-                    PerformLayout();
-                    base.PerformLayout();
-                    sender.Invalidate();
-                    Grasshopper.Instances.InvalidateCanvas();
-					
                     //MessageBox.Show("The button was clicked, and we want " + (base.Owner as HairwormComponent).clusterParamNumInput + " inputs and " + (base.Owner as HairwormComponent).clusterParamNumOutput + " output params", "Button", MessageBoxButtons.OK);
 
                     return GH_ObjectResponse.Handled;

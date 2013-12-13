@@ -31,7 +31,8 @@ namespace Hairworm
 		string clusterFileUrl = null;
 		string fullTempFilePath = null;
 		string debugText = "";
-        GH_ObjectWrapper[] clusterInputs = null;
+//        GH_ObjectWrapper[] clusterInputs = null;
+        GH_Number[] clusterInputs = null;
 
         GH_Cluster wormCluster = null;
         GH_Document wormDoc = null;
@@ -70,10 +71,6 @@ namespace Hairworm
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("String", "ClusterURL", "URL To Cluster", GH_ParamAccess.item);
-//            pManager.AddBooleanParameter("Download", "Download", "Download clsuter", GH_ParamAccess.item, false);
-//            pManager.AddNumberParameter("Input Value", "InputVal", "InputValue", GH_ParamAccess.item);
-//            pManager[0].Optional = true;
-            //            pManager.AddGeometryParameter("Input Geometry", "InputGeo", "InputGeometry", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -81,8 +78,6 @@ namespace Hairworm
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-//            pManager.AddGeometryParameter("Output Geometry", "OutputGe32o", "OutputGeometry", GH_ParamAccess.tree);
-//            pManager.AddGenericParameter("Generic Output", "GenericOutput", "GenericOutput", GH_ParamAccess.tree);
             pManager.AddTextParameter("Debug", "Debug", "This is debug output", GH_ParamAccess.item);
         }
 
@@ -97,8 +92,8 @@ namespace Hairworm
 			////////////////////////
             //  Retrieve crucial (fixed) input data, exit if non-existent
 			////////////////////////
+
             if (!DA.GetData(0, ref clusterFileUrl)) { return; }
-//            if (!DA.GetData(1, ref downloadCluster)) { return; }
 
            //GH_Param temptype = new IGH_Param();
 
@@ -122,31 +117,40 @@ namespace Hairworm
                 for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
                 {
                     if (!DA.GetData(i, ref clusterInputs[i - fixedParamNumInput])) { return; }
+                    debugText += "okay, input # " + i + " is: " + clusterInputs[i - fixedParamNumInput].ToString() + "\n";
                 }
+
+			/*wormDoc = new GH_Document();
+			wormDoc.Enabled = true;
+			wormDoc.AddObject(wormCluster, true, 0);*/
+
                 // get data from array, input into cluster
                 for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
                 {
                     wormCluster.Params.Input[i - fixedParamNumInput].AddVolatileData(new GH_Path(0), 0, clusterInputs[i - fixedParamNumInput]);
                 }
-                //            wormCluster.Params.Input[0].AddVolatileData(new GH_Path(0), 0, radius);
-                //            debugText += "\ninputtypename = " + wormCluster.Params.Input[0].TypeName;
-                //            debugText += "\nradisu = " + radius;
 
-//                debugText += "\noutputcount = " + wormCluster.Params.Output.Count;
 
-				// I GUESS CLUSTER RUNS AUTOMATICALLY?
-//                wormCluster.ClearData();
 
-                // Get a pointer to the data inside the first cluster output.
-//                IGH_Structure data = wormCluster.Params.Output[0].VolatileData;
+				// RUN CLUSTER AND RECOMPUTE THIS 
+                wormCluster.ExpireSolution(true);
+					
+                // get computed data from cluster, push into component outputs
+                for (int i = fixedParamNumOutput; i < (fixedParamNumOutput + clusterParamNumOutput); i++)
+                {
+					// Create a copy of this data (the original data will be wiped)
+					DataTree<object> copy = new DataTree<object>();
+					copy.MergeStructure(wormCluster.Params.Output[0].VolatileData, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
 
-                // Create a copy of this data (the original data will be wiped)
-                DataTree<object> copy = new DataTree<object>();
-                copy.MergeStructure(wormCluster.Params.Output[0].VolatileData, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
+					// push into component outputs
+					DA.SetDataTree(i, copy);
+                }
 
-                // Output 
-                DA.SetDataTree(1, copy);
 
+/*                wormDoc.Enabled = false;
+                wormDoc.RemoveObject(wormCluster, false);
+                wormDoc.Dispose();
+                wormDoc = null;*/
             }
 
             DA.SetData(0, debugText);
@@ -242,13 +246,16 @@ namespace Hairworm
 				else
                     Params.UnregisterInputParameter(Params.Input[Params.Input.Count - 1]);
             }
-            clusterInputs = new GH_ObjectWrapper[clusterParamNumInput];
+            //clusterInputs = new GH_ObjectWrapper[clusterParamNumInput];
+            clusterInputs = new GH_Number[clusterParamNumInput];
             //ExpireSolution(true);
 
         }
 
-        public void ReloadCluster()
+        public void InitCluster()
         {
+            debugText = "";
+			
 			// if we had a previous document, then let's delete it and start over
             if (wormDoc != null)
             {
@@ -360,7 +367,7 @@ namespace Hairworm
                 System.Drawing.RectangleF rec = ButtonBounds;
                 if (rec.Contains(e.CanvasLocation))
                 {
-                    (base.Owner as HairwormComponent).ReloadCluster();
+                    (base.Owner as HairwormComponent).InitCluster();
                     //MessageBox.Show("The button was clicked, and we want " + (base.Owner as HairwormComponent).clusterParamNumInput + " inputs and " + (base.Owner as HairwormComponent).clusterParamNumOutput + " output params", "Button", MessageBoxButtons.OK);
 
                     return GH_ObjectResponse.Handled;

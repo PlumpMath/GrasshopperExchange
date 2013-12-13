@@ -119,7 +119,6 @@ namespace Hairworm
                     debugText += "okay, input # " + i + " is: " + clusterInputs[i - fixedParamNumInput].ToString() + "\n";
                 }
 
-
                 // get data from array, input into cluster
                 for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
                 {
@@ -130,14 +129,14 @@ namespace Hairworm
 				// RUN CLUSTER AND RECOMPUTE THIS 
                 wormCluster.ExpireSolution(true);
 					
-                // get computed data from cluster, push into hairworm outputs
+                // get computed data from cluster outputs, push into hairworm outputs
                 for (int i = fixedParamNumOutput; i < (fixedParamNumOutput + clusterParamNumOutput); i++)
                 {
 					// Create a copy of this data (the original data will be wiped)
 					DataTree<object> copy = new DataTree<object>();
-					copy.MergeStructure(wormCluster.Params.Output[0].VolatileData, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
+					copy.MergeStructure(wormCluster.Params.Output[i].VolatileData, new Grasshopper.Kernel.Parameters.Hints.GH_NullHint());
 
-					// push into component outputs
+					// push into hairworm component outputs
 					DA.SetDataTree(i, copy);
                 }
 

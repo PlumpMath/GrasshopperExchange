@@ -27,6 +27,10 @@ namespace Hairworm
 		private int fixedParamNumInput = 1;
 		private int fixedParamNumOutput = 1;
 
+        const string HairwormBaseName = "Hairworm";
+		string HairwormClusterName = null; //name of the parasite cluster
+		string HairwormClusterNickName = ""; //nickname of the parasite cluster
+
 		string clusterFileUrl = null;
 		string fullTempFilePath = null;
 		string debugText = "";
@@ -125,7 +129,9 @@ namespace Hairworm
                 {
                     wormCluster.Params.Input[i - fixedParamNumInput].AddVolatileData(new GH_Path(0), 0, clusterInputs[i - fixedParamNumInput]);
                 }
-
+/*				NEXT STEp
+				DETECT CLUSTER Params NAMES 
+					AND ASSIGN Hairworm PARAM NAMES ACCORDINGLY*/
 
 				// RUN CLUSTER AND RECOMPUTE THIS 
                 wormCluster.ExpireSolution(true);
@@ -142,6 +148,8 @@ namespace Hairworm
                 }
 
 
+
+				DA.SetData(0, debugText);
 
             }
 
@@ -239,7 +247,25 @@ namespace Hairworm
                     Params.UnregisterInputParameter(Params.Input[Params.Input.Count - 1]);
             }
             clusterInputs = new GH_ObjectWrapper[clusterParamNumInput];
-//            clusterInputs = new GH_Number[clusterParamNumInput];
+
+			// detect cluster input names and set hairworm input names
+			for (int i = 0; i < clusterParamNumInput; i++)
+			{
+/*				debugText += "cluster input # " + i + " is named = " + wormCluster.Params.Input[i].Name;
+				debugText += "cluster input # " + i + " is nicknamed = " + wormCluster.Params.Input[i].NickName;*/
+				Params.Input[i + fixedParamNumInput].Name = wormCluster.Params.Input[i].Name;
+				Params.Input[i + fixedParamNumInput].NickName = wormCluster.Params.Input[i].NickName;
+			}
+
+			// detect cluster output names and set hairworm output names
+			for (int i = 0; i < clusterParamNumOutput; i++)
+			{
+/*				debugText += "cluster output # " + i + " is named = " + wormCluster.Params.Output[i].Name;
+				debugText += "cluster output # " + i + " is nicknamed = " + wormCluster.Params.Output[i].NickName;*/
+				Params.Output[i + fixedParamNumOutput].Name = wormCluster.Params.Output[i].Name;
+				Params.Output[i + fixedParamNumOutput].NickName = wormCluster.Params.Output[i].NickName;
+			}
+
 
 			//refresh parameters! since they changed.
             Params.OnParametersChanged();
@@ -264,7 +290,7 @@ namespace Hairworm
 			////////////////////////
             // set path for temporary file location
 			////////////////////////
-                        string tempPath = System.IO.Path.GetTempPath();
+            string tempPath = System.IO.Path.GetTempPath();
             Uri uri = new Uri(clusterFileUrl);
             string filename = System.IO.Path.GetFileName(uri.LocalPath);
             fullTempFilePath = tempPath + filename; 
@@ -305,7 +331,21 @@ namespace Hairworm
             debugText += "\ncluster input params # = " + clusterParamNumInput;
             debugText += "\ncluster output params # = " + clusterParamNumOutput;
 
+			// add/remove/rename parameters to match cluster parameter count.
             MatchParameterCount();
+
+			// change hairworm name to match cluster name
+			if(wormCluster.Name == "Cluster") {
+				HairwormClusterName = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
+                HairwormClusterNickName = System.IO.Path.GetFileNameWithoutExtension(uri.LocalPath);
+            } else {
+				HairwormClusterName = wormCluster.Name;
+                HairwormClusterNickName = wormCluster.NickName;
+            }
+            Name = HairwormBaseName + " (" + HairwormClusterName + ")";
+            NickName = HairwormBaseName + " (" + this.HairwormClusterNickName + ")";
+			debugText += "cluster is named = " + wormCluster.Name;
+			debugText += "cluster is nicknamed = " + wormCluster.NickName;
 
 			//get new document, enable it, and add cluster to it
 			wormDoc = new GH_Document();

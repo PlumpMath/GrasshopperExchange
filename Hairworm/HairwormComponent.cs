@@ -284,9 +284,6 @@ namespace Hairworm
                 wormDoc = null;
             }
 
-//temporary file url
-            //            clusterFileUrl = "https://github.com/provolot/GrasshopperExchange/raw/master/Hairworm/_example_files/SphereMakerVariable.ghcluster";
-
 			////////////////////////
             // set path for temporary file location
 			////////////////////////
@@ -294,7 +291,6 @@ namespace Hairworm
             Uri uri = new Uri(clusterFileUrl);
             string filename = System.IO.Path.GetFileName(uri.LocalPath);
             fullTempFilePath = tempPath + filename; 
-
 
 			////////////////////////
             // attempt to downloadCluster file
@@ -370,6 +366,7 @@ namespace Hairworm
         {
             base.Layout();
 
+			// Draw a button 
             System.Drawing.Rectangle rec0 = GH_Convert.ToRectangle(Bounds);
             rec0.Height += 22;
 

@@ -129,9 +129,6 @@ namespace Hairworm
                 {
                     wormCluster.Params.Input[i - fixedParamNumInput].AddVolatileData(new GH_Path(0), 0, clusterInputs[i - fixedParamNumInput]);
                 }
-/*				NEXT STEp
-				DETECT CLUSTER Params NAMES 
-					AND ASSIGN Hairworm PARAM NAMES ACCORDINGLY*/
 
 				// RUN CLUSTER AND RECOMPUTE THIS 
                 wormCluster.ExpireSolution(true);

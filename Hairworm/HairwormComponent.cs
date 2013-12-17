@@ -240,6 +240,24 @@ namespace Hairworm
             }
 
 //            MessageBox.Show("wormCluster.Params.Output[0].Type.ToString() = " + wormCluster.Params.Output[0].Type.ToString());
+			//now we have to add our parameters, making sure we're making them with the right param type.
+            for (int i = fixedParamNumInput; i < fixedParamNumInput + clusterParamNumInput; i++)
+            {
+                //wormCluster.Params.Output[0].Type.ToString());
+                try
+                {
+                    var type = wormCluster.Params.Input[0].Type;
+                    var myObject = (IGH_Goo) Activator.CreateInstance(type);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("error message = " + e.Message);
+                }
+                //MessageBox.Show("wormCluster.Params.Input[0].Type= " + wormCluster.Params.Input[0].Type.ToString());
+                //MessageBox.Show("wormCluster.Params.Input[0].Type.AssemblyQualifiedName = " + wormCluster.Params.Input[0].Type.AssemblyQualifiedName);
+            }
+
+
 			// delete/make as many output parameters as we need
             while (clusterParamNumOutput != (Params.Output.Count - fixedParamNumOutput))
             {

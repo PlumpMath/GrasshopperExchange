@@ -51,7 +51,7 @@ namespace Hairworm
         public HairwormComponent()
             : base("Hairworm", "Hairworm",
                 "Description",
-                "Extra", "Hairworm")
+                "Hairworm", "Hairworm")
         {
         }
 
@@ -280,6 +280,11 @@ namespace Hairworm
                 wormDoc.Dispose();
                 wormDoc = null;
             }
+
+			////////////////////////
+            // get clusterFileURL param again, since inputs may not have run if invalid
+			////////////////////////
+            clusterFileUrl = Params.Input[0].VolatileData.get_Branch(0)[0].ToString();
 
 			////////////////////////
             // set path for temporary file location

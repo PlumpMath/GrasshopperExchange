@@ -227,6 +227,19 @@ namespace Hairworm
 
         public void MatchParameterCount()
         {
+			//OKAY, first we have to remove all parameters, because the data type may change.
+			// we want to remove all but fixedParamNumOutput / fixedParamNumInput
+			// so we just want to keep on iterating as long as Params.Input.Count > fixedParamNumInput, etc.
+            while (Params.Input.Count > fixedParamNumInput) {
+				// delete the last one
+				Params.UnregisterInputParameter(Params.Input[Params.Input.Count - 1]);
+            }
+            while (Params.Output.Count > fixedParamNumOutput) {
+				// delete the last one
+				Params.UnregisterOutputParameter(Params.Output[Params.Output.Count - 1]);
+            }
+
+//            MessageBox.Show("wormCluster.Params.Output[0].Type.ToString() = " + wormCluster.Params.Output[0].Type.ToString());
 			// delete/make as many output parameters as we need
             while (clusterParamNumOutput != (Params.Output.Count - fixedParamNumOutput))
             {
@@ -252,6 +265,7 @@ namespace Hairworm
 				debugText += "cluster input # " + i + " is nicknamed = " + wormCluster.Params.Input[i].NickName;*/
 				Params.Input[i + fixedParamNumInput].Name = wormCluster.Params.Input[i].Name;
 				Params.Input[i + fixedParamNumInput].NickName = wormCluster.Params.Input[i].NickName;
+				Params.Input[i + fixedParamNumInput].Optional = wormCluster.Params.Input[i].Optional;
 			}
 
 			// detect cluster output names and set hairworm output names
@@ -261,6 +275,7 @@ namespace Hairworm
 				debugText += "cluster output # " + i + " is nicknamed = " + wormCluster.Params.Output[i].NickName;*/
 				Params.Output[i + fixedParamNumOutput].Name = wormCluster.Params.Output[i].Name;
 				Params.Output[i + fixedParamNumOutput].NickName = wormCluster.Params.Output[i].NickName;
+				Params.Output[i + fixedParamNumOutput].Optional = wormCluster.Params.Output[i].Optional;
 			}
 
 

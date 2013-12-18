@@ -234,32 +234,45 @@ namespace Hairworm
 
         public void MatchParameterCount()
         {
-			//OKAY, first we have to remove all parameters, because the data type may change.
+			//OKAY, ONLY if we're loading a new cluster altogether, or if the parameter number differs,
+           //  we have to remove all parameters, because the data type may change.
 			// we want to remove all but fixedParamNumOutput / fixedParamNumInput
 			// so we just want to keep on iterating as long as Params.Input.Count > fixedParamNumInput, etc.
-            while (Params.Input.Count > fixedParamNumInput) {
-				// delete the last one
-				Params.UnregisterInputParameter(Params.Input[Params.Input.Count - 1]);
-            }
-            while (Params.Output.Count > fixedParamNumOutput) {
-				// delete the last one
-				Params.UnregisterOutputParameter(Params.Output[Params.Output.Count - 1]);
+
+            if (clusterFileUrl != loadedClusterFileUrl ||
+				Params.Input.Count != fixedParamNumInput + clusterParamNumInput ||
+				Params.Output.Count != fixedParamNumOutput + clusterParamNumOutput)
+            {
+
+                while (Params.Input.Count > fixedParamNumInput)
+                {
+                    // delete the last one
+                    Params.UnregisterInputParameter(Params.Input[Params.Input.Count - 1]);
+                }
+                while (Params.Output.Count > fixedParamNumOutput)
+                {
+                    // delete the last one
+                    Params.UnregisterOutputParameter(Params.Output[Params.Output.Count - 1]);
+                }
+
+				// now, we should add as many input/output params as we need.
+				for (int i = fixedParamNumInput; i < fixedParamNumInput + clusterParamNumInput; i++)
+				{
+						// even though this is generic, somehow it magically synces up with the type of the cluster type. huh.
+						Params.RegisterInputParam(new Param_GenericObject());
+				}
+				for (int i = fixedParamNumOutput; i < fixedParamNumOutput + clusterParamNumOutput; i++)
+				{
+						// even though this is generic, somehow it magically synces up with the type of the cluster type. huh.
+						Params.RegisterOutputParam(new Param_GenericObject());
+				}
+
+				//instantiate an array to hold the values of cluster inputs, since  we have to size it based on.. well, the number of cluster inputs
+				clusterInputs = new GH_ObjectWrapper[clusterParamNumInput];
+
             }
 
-			// now, we should add as many input/output params as we need.
-            for (int i = fixedParamNumInput; i < fixedParamNumInput + clusterParamNumInput; i++)
-            {
-					// even though this is generic, somehow it magically synces up with the type of the cluster type. huh.
-                    Params.RegisterInputParam(new Param_GenericObject());
-            }
-            for (int i = fixedParamNumOutput; i < fixedParamNumOutput + clusterParamNumOutput; i++)
-            {
-					// even though this is generic, somehow it magically synces up with the type of the cluster type. huh.
-                    Params.RegisterOutputParam(new Param_GenericObject());
-            }
-
-			//instantiate an array to hold the values of cluster inputs, since  we have to size it based on.. well, the number of cluster inputs
-            clusterInputs = new GH_ObjectWrapper[clusterParamNumInput];
+			// we should do this regardless, since the names of inputs could have changed.
 
 			// detect cluster input names and set hairworm input names
 			for (int i = 0; i < clusterParamNumInput; i++)
@@ -332,9 +345,6 @@ namespace Hairworm
             // Create a cluster
 			////////////////////////
 
-			// loading cluster worked, so:
-            loadedClusterFileUrl = clusterFileUrl;
-
 			// create cluster
             wormCluster = new GH_Cluster();
             wormCluster.CreateFromFilePath(fullTempFilePath);
@@ -365,6 +375,9 @@ namespace Hairworm
 			wormDoc = new GH_Document();
 			wormDoc.Enabled = true;
 			wormDoc.AddObject(wormCluster, true, 0);
+
+			// loading cluster worked. (it's important that this is almost last, because MatchParameterCount scans this to know when to disconnect params)
+            loadedClusterFileUrl = clusterFileUrl;
 
             ExpireSolution(true);
 

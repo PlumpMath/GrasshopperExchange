@@ -33,6 +33,8 @@ namespace Hairworm
 
 		string clusterFileUrl = null;
 		string fullTempFilePath = null;
+        string loadedClusterFileUrl = null;
+
 		string debugText = "";
         GH_ObjectWrapper[] clusterInputs = null;
 //        GH_Number[] clusterInputs = null;
@@ -98,19 +100,20 @@ namespace Hairworm
 
             if (!DA.GetData(0, ref clusterFileUrl)) { return; }
 
-           //GH_Param temptype = new IGH_Param();
 
 			////////////////////////
             // check if cluster was properly loaded, and if parameters are correct
 			// and if not, do something about it!
 			////////////////////////
-            if (wormCluster == null ||
-                Params.Input.Count != (fixedParamNumInput + clusterParamNumInput) ||
-                Params.Output.Count != (fixedParamNumOutput + clusterParamNumOutput))
+
+            if (loadedClusterFileUrl == null ||
+				loadedClusterFileUrl != clusterFileUrl)
             {
+                MessageBox.Show("hey, don't we have a parameter mismatch?");
                 //we've got a parameter mismatch
                 // urge user to click on buttom to match paramcount to cluster param count
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cluster not loaded properly - click on 'Reload Cluster' button!");
+//                (this.m_attributes as Attributes_Custom).button.Palette = GH_Palette.Pink;
             }
             else
             {
@@ -239,48 +242,24 @@ namespace Hairworm
 				Params.UnregisterOutputParameter(Params.Output[Params.Output.Count - 1]);
             }
 
-//            MessageBox.Show("wormCluster.Params.Output[0].Type.ToString() = " + wormCluster.Params.Output[0].Type.ToString());
-			//now we have to add our parameters, making sure we're making them with the right param type.
+			// now, we should add as many input/output params as we need.
             for (int i = fixedParamNumInput; i < fixedParamNumInput + clusterParamNumInput; i++)
             {
-                //wormCluster.Params.Output[0].Type.ToString());
-                try
-                {
-                    var type = wormCluster.Params.Input[0].Type;
-                    var myObject = (IGH_Goo) Activator.CreateInstance(type);
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show("error message = " + e.Message);
-                }
-                //MessageBox.Show("wormCluster.Params.Input[0].Type= " + wormCluster.Params.Input[0].Type.ToString());
-                //MessageBox.Show("wormCluster.Params.Input[0].Type.AssemblyQualifiedName = " + wormCluster.Params.Input[0].Type.AssemblyQualifiedName);
-            }
-
-
-			// delete/make as many output parameters as we need
-            while (clusterParamNumOutput != (Params.Output.Count - fixedParamNumOutput))
-            {
-                if (clusterParamNumOutput > (Params.Output.Count - fixedParamNumOutput))
-                    Params.RegisterOutputParam(new Param_GenericObject());
-				else
-                    Params.UnregisterOutputParameter(Params.Output[Params.Output.Count - 1]);
-            }
-			// delete/make as many input parameters as we need
-            while (clusterParamNumInput != (Params.Input.Count - fixedParamNumInput))
-            {
-                if (clusterParamNumInput > (Params.Input.Count - fixedParamNumInput))
+					// even though this is generic, somehow it magically synces up with the type of the cluster type. huh.
                     Params.RegisterInputParam(new Param_GenericObject());
-				else
-                    Params.UnregisterInputParameter(Params.Input[Params.Input.Count - 1]);
             }
+            for (int i = fixedParamNumOutput; i < fixedParamNumOutput + clusterParamNumOutput; i++)
+            {
+					// even though this is generic, somehow it magically synces up with the type of the cluster type. huh.
+                    Params.RegisterOutputParam(new Param_GenericObject());
+            }
+
+			//instantiate an array to hold the values of cluster inputs, since  we have to size it based on.. well, the number of cluster inputs
             clusterInputs = new GH_ObjectWrapper[clusterParamNumInput];
 
 			// detect cluster input names and set hairworm input names
 			for (int i = 0; i < clusterParamNumInput; i++)
 			{
-/*				debugText += "cluster input # " + i + " is named = " + wormCluster.Params.Input[i].Name;
-				debugText += "cluster input # " + i + " is nicknamed = " + wormCluster.Params.Input[i].NickName;*/
 				Params.Input[i + fixedParamNumInput].Name = wormCluster.Params.Input[i].Name;
 				Params.Input[i + fixedParamNumInput].NickName = wormCluster.Params.Input[i].NickName;
 				Params.Input[i + fixedParamNumInput].Optional = wormCluster.Params.Input[i].Optional;
@@ -289,15 +268,12 @@ namespace Hairworm
 			// detect cluster output names and set hairworm output names
 			for (int i = 0; i < clusterParamNumOutput; i++)
 			{
-/*				debugText += "cluster output # " + i + " is named = " + wormCluster.Params.Output[i].Name;
-				debugText += "cluster output # " + i + " is nicknamed = " + wormCluster.Params.Output[i].NickName;*/
 				Params.Output[i + fixedParamNumOutput].Name = wormCluster.Params.Output[i].Name;
 				Params.Output[i + fixedParamNumOutput].NickName = wormCluster.Params.Output[i].NickName;
 				Params.Output[i + fixedParamNumOutput].Optional = wormCluster.Params.Output[i].Optional;
 			}
 
-
-			//refresh parameters! since they changed.
+            //refresh parameters! since they changed.
             Params.OnParametersChanged();
         }
 
@@ -352,6 +328,9 @@ namespace Hairworm
             // Create a cluster
 			////////////////////////
 
+			// loading cluster worked, so:
+            loadedClusterFileUrl = clusterFileUrl;
+
 			// create cluster
             wormCluster = new GH_Cluster();
             wormCluster.CreateFromFilePath(fullTempFilePath);
@@ -396,6 +375,7 @@ namespace Hairworm
     {
         GH_Component thisowner = null;
         public Attributes_Custom(GH_Component owner) : base(owner) { thisowner = owner; }
+        public GH_Capsule button = null;
 
         protected override void Layout()
         {
@@ -421,7 +401,8 @@ namespace Hairworm
 
             if (channel == GH_CanvasChannel.Objects)
             {
-                GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Reload Cluster", 2, 0);
+                //GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Reload Cluster", 2, 0);
+                button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Reload Cluster", 2, 0);
                 button.Render(graphics, Selected, Owner.Locked, false);
                 button.Dispose();
             }

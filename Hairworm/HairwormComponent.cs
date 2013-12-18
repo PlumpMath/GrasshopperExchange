@@ -109,11 +109,15 @@ namespace Hairworm
             if (loadedClusterFileUrl == null ||
 				loadedClusterFileUrl != clusterFileUrl)
             {
-                MessageBox.Show("hey, don't we have a parameter mismatch?");
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cluster not loaded properly - click on 'Reload Cluster' button!");
+//                MessageBox.Show("hey, don't we have a parameter mismatch?");
                 //we've got a parameter mismatch
                 // urge user to click on buttom to match paramcount to cluster param count
-                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cluster not loaded properly - click on 'Reload Cluster' button!");
-//                (this.m_attributes as Attributes_Custom).button.Palette = GH_Palette.Pink;
+/*                (this.m_attributes as Attributes_Custom).button.Palette = GH_Palette.Pink;
+                (this.m_attributes as Attributes_Custom).ExpireLayout();
+                (this.m_attributes as Attributes_Custom).PerformLayout(); 
+				NEXT STEP - HIGHLIGHT BUTTON */
+
             }
             else
             {

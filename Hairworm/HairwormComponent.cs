@@ -32,9 +32,9 @@ namespace Hairworm
 		string HairwormClusterName = null; //name of the parasite cluster
 		string HairwormClusterNickName = ""; //nickname of the parasite cluster
 
-		string clusterFileUrl = null;
+		string clusterUrlParam = null;
 		string fullTempFilePath = null;
-        string loadedClusterFileUrl = null;
+        string loadedClusterUrlParam = null;
 
 		string debugText = "";
         GH_ObjectWrapper[] clusterInputs = null;
@@ -102,16 +102,16 @@ namespace Hairworm
             //  Retrieve crucial (fixed) input data, exit if non-existent
 			////////////////////////
 
-            if (!DA.GetData(0, ref clusterFileUrl)) { return; }
+            if (!DA.GetData(0, ref clusterUrlParam)) { return; }
 
 
 			////////////////////////
             // check if cluster was properly loaded, and if parameters are correct
 			// and if not, do something about it!
 			////////////////////////
-
-            if (loadedClusterFileUrl == null ||
-				loadedClusterFileUrl != clusterFileUrl)
+			
+            if (loadedClusterUrlParam == null ||
+				loadedClusterUrlParam != clusterUrlParam)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cluster not loaded properly - click on 'Reload Cluster' button!");
 //                MessageBox.Show("hey, don't we have a parameter mismatch?");
@@ -221,11 +221,10 @@ namespace Hairworm
 					// so now we have serverTXT. let's replace 'REPLACE' with clustername.
                     clusterName = serverTXT.Replace("REPLACE", clusterName);
 
-					// now we need to exchange GHEXTENSION with serverEXTENSIONs.
+					// now we need to exchange GHEXTENSION with serverEXTENSIONs. iterate through and try them all
                     for (int i = 0; i < serverEXTENSIONS.Length; i++)
                     {
                         string aClusterURL = clusterName.Replace("GHEXTENSION", serverEXTENSIONS[i]);
-                        MessageBox.Show("we're trying :: " + aClusterURL);
                         if (URLexists(aClusterURL) == "true")
                         {
 							// oh! it worked on this one.
@@ -354,7 +353,7 @@ namespace Hairworm
 			// we want to remove all but fixedParamNumOutput / fixedParamNumInput
 			// so we just want to keep on iterating as long as Params.Input.Count > fixedParamNumInput, etc.
 
-            if (clusterFileUrl != loadedClusterFileUrl ||
+            if (clusterUrlParam != loadedClusterUrlParam ||
 				Params.Input.Count != fixedParamNumInput + clusterParamNumInput ||
 				Params.Output.Count != fixedParamNumOutput + clusterParamNumOutput)
             {
@@ -430,13 +429,14 @@ namespace Hairworm
 			////////////////////////
             // get clustername and process/validate into URL
 			////////////////////////
-			clusterFileUrl = processValidateClusterName(clusterName);
+			string clusterUrl = processValidateClusterName(clusterName);
+
 
 			////////////////////////
             // set path for temporary file location
 			////////////////////////
             string tempPath = System.IO.Path.GetTempPath();
-            Uri uri = new Uri(clusterFileUrl);
+            Uri uri = new Uri(clusterUrl);
             string filename = System.IO.Path.GetFileName(uri.LocalPath);
             fullTempFilePath = tempPath + filename; 
 
@@ -447,7 +447,7 @@ namespace Hairworm
 			using (WebClient Client = new WebClient())
 			{
 				try {
-					Client.DownloadFile(clusterFileUrl, fullTempFilePath);
+					Client.DownloadFile(clusterUrl, fullTempFilePath);
                 }
 				catch(WebException webEx)
 				{
@@ -455,7 +455,7 @@ namespace Hairworm
 
                 }
 			}
-			debugText += "Downloaded file " + clusterFileUrl + ", " + filename + "\n";
+			debugText += "Downloaded file " + clusterUrl + ", " + filename + "\n";
             debugText += "into " + fullTempFilePath + "\n";
 
             // if gh file doesn't exist in temporary location, abort 
@@ -497,7 +497,7 @@ namespace Hairworm
 			wormDoc.AddObject(wormCluster, true, 0);
 
 			// loading cluster worked. (it's important that this is almost last, because MatchParameterCount scans this to know when to disconnect params)
-            loadedClusterFileUrl = clusterFileUrl;
+            loadedClusterUrlParam = clusterUrlParam;
 
             ExpireSolution(true);
 

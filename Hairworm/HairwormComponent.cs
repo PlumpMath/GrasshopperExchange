@@ -38,6 +38,7 @@ namespace Hairworm
 
 		string debugText = "";
         GH_ObjectWrapper[] clusterInputs = null;
+        List<GH_ObjectWrapper>[] clusterInputLists = null;
 
         GH_Cluster wormCluster = null;
         GH_Document wormDoc = null;
@@ -130,15 +131,18 @@ namespace Hairworm
                 //get data from hairworm inputs, put into array
                 for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
                 {
-                    if (!DA.GetData(i, ref clusterInputs[i - fixedParamNumInput])) { return; }
-                    debugText += "okay, input # " + i + " is: " + clusterInputs[i - fixedParamNumInput].ToString() + "\n";
-					DA.SetData(0, debugText);
+                    if (!DA.GetDataList(i, clusterInputLists[i - fixedParamNumInput])) { return; }
+                    //if (!DA.GetData(i, ref clusterInput[i - fixedParamNumInput])) { return; }
+//                    debugText += "okay, input # " + i + " is: " + clusterInputs[i - fixedParamNumInput].ToString() + "\n";
+//					DA.SetData(0, debugText);
                 }
 
                 // get data from array, input into cluster
                 for (int i = fixedParamNumInput; i < (fixedParamNumInput + clusterParamNumInput); i++)
                 {
-                    wormCluster.Params.Input[i - fixedParamNumInput].AddVolatileData(new GH_Path(0), 0, clusterInputs[i - fixedParamNumInput]);
+//                    wormCluster.Params.Input[i - fixedParamNumInput].AddVolatileData(new GH_Path(0), 0, clusterInputs[i - fixedParamNumInput]);
+                    wormCluster.Params.Input[i - fixedParamNumInput].AddVolatileDataList(new GH_Path(0), clusterInputLists[i - fixedParamNumInput]);
+
                 }
 
 				// RUN CLUSTER AND RECOMPUTE THIS 
@@ -374,8 +378,9 @@ namespace Hairworm
 				{
 					// even though this is generic, somehow it magically synces up with the type of the cluster type. huh.
 					Params.RegisterInputParam(new Param_GenericObject());
-                    Params.Input[i].Access = wormCluster.Params.Input[i - fixedParamNumInput].Access;
-                    MessageBox.Show(wormCluster.Params.Input[i - fixedParamNumInput].Access.ToString());
+                    Params.Input[i].Access = GH_ParamAccess.list;
+//                    Params.Input[i].Access = wormCluster.Params.Input[i - fixedParamNumInput].Access;
+//                    MessageBox.Show(wormCluster.Params.Input[i - fixedParamNumInput].Access.ToString());
 //			clusterParamNumOutput = wormCluster.Params.Output.Count;
  //                       GH_ParamAccess.list;
 				}
@@ -388,6 +393,11 @@ namespace Hairworm
 
 				//instantiate an array to hold the values of cluster inputs, since  we have to size it based on.. well, the number of cluster inputs
 				clusterInputs = new GH_ObjectWrapper[clusterParamNumInput];
+                clusterInputLists = new List<GH_ObjectWrapper>[clusterParamNumInput];
+                for (int i = 0; i < clusterParamNumInput; i++)
+                {
+                    clusterInputLists[i] = new List<GH_ObjectWrapper>();
+                }
 
             }
 

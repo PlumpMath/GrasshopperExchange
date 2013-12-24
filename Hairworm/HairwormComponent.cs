@@ -222,33 +222,52 @@ namespace Hairworm
                     clusterName = serverTXT.Replace("REPLACE", clusterName);
 
 					// now we need to exchange GHEXTENSION with serverEXTENSIONs.
+                    for (int i = 0; i < serverEXTENSIONS.Length; i++)
+                    {
+                        string aClusterName = clusterName.Replace("GHEXTENSION", serverEXTENSIONS[i]);
+
+                    }
+					
 				
 
                 }
 
+                string aMessage = URLexists(clusterName);
 
-                //let's see if the file exists.
-                WebRequest request = WebRequest.Create(new Uri(clusterName));
-                request.Method = "HEAD";
-                try
+                if (aMessage == "true")
+                    return clusterName;
+                else
                 {
-                    using (WebResponse response = request.GetResponse())
-                    {
-                        //well, it worked!
-						return clusterName;
-                    }
-                }
-                catch (Exception e)
-                {
-					// okay, file doesn't exist, let us know
-					AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cluster name is invalid - URL not available! \n(" + e.Message + ")");
-					MessageBox.Show("Cluster name is invalid - URL not available! \n(" + e.Message + ")", "Hairworm");
+					AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cluster name is invalid - URL not available! \n(" + aMessage + ")");
+					MessageBox.Show("Cluster name is invalid - URL not available! \n(" + aMessage + ")", "Hairworm");
                     return "";
                 }
 
             }
 
         }
+
+
+        private string URLexists(string url)
+        {
+			//let's see if the file exists.
+			WebRequest request = WebRequest.Create(new Uri(url));
+			request.Method = "HEAD";
+			try
+			{
+				using (WebResponse response = request.GetResponse())
+				{
+					//well, it worked!
+                    return "true";
+				}
+			}
+			catch (Exception e)
+			{
+				return e.Message;
+			}
+
+        }
+
 	        /// <summary>
         /// Provides an Icon for every component that will be visible in the User Interface.
         /// Icons need to be 24x24 pixels.

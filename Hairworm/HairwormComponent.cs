@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using System.IO;
 using System.Net;
+using System.Drawing;
 
 
 using Grasshopper;
@@ -161,7 +162,58 @@ namespace Hairworm
 
         }
 
-        /// <summary>
+        public string processValidateClusterName(string clusterName)
+        {	 
+            /****
+			this string processes the cluster name
+			either validates a url, or gives a github server
+
+			A) if you specify a string starting with http, it tests that string as a URL, returns url on success, blank on failure
+            B) if you specify a string without http, ex) 'stddev'
+             we go to the default GrasshopperExchange server and grab the server url
+			(for example: "https://www.github.com/provolot/grasshopperexchange/clusters/REPLACE.gh*")
+			(or: "http://www.example.com/clusters/REPLACE/REPLACE.gh*")
+             and then we replace 'REPLACE' with the string:
+			("https://www.github.com/provolot/grasshopperexchange/clusters/stddev.gh*")
+             and then we check for
+			("https://www.github.com/provolot/grasshopperexchange/clusters/stddev.gh")
+			("https://www.github.com/provolot/grasshopperexchange/clusters/stddev.ghx")
+			("https://www.github.com/provolot/grasshopperexchange/clusters/stddev.ghcluster")
+             and return the first working url. 
+             ****/
+			// okay so this is for debugging purposes only
+			// validate url first
+
+            if (!System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
+            {
+                // uh, network is down..
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Network connection is unavailable!");
+				MessageBox.Show("Network conenction is unavailable!", "Hairworm");
+                return "";
+            }
+            else
+            {
+                WebRequest request = WebRequest.Create(new Uri(clusterName));
+                request.Method = "HEAD";
+                try
+                {
+                    using (WebResponse response = request.GetResponse())
+                    {
+                        //well, it worked!
+						return clusterName;
+                    }
+                }
+                catch (Exception e)
+                {
+					AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cluster name is invalid - URL not available! \n(" + e.Message + ")");
+					MessageBox.Show("Cluster name is invalid - URL not available! \n(" + e.Message + ")", "Hairworm");
+                    return "";
+                }
+
+            }
+
+        }
+	        /// <summary>
         /// Provides an Icon for every component that will be visible in the User Interface.
         /// Icons need to be 24x24 pixels.
         /// </summary>
@@ -310,7 +362,9 @@ namespace Hairworm
 			////////////////////////
             // get clusterFileURL param again, since inputs may not have run if invalid
 			////////////////////////
-            clusterFileUrl = Params.Input[0].VolatileData.get_Branch(0)[0].ToString();
+            string clusterName = Params.Input[0].VolatileData.get_Branch(0)[0].ToString();
+
+			clusterFileUrl = processValidateClusterName(clusterName);
 
 			////////////////////////
             // set path for temporary file location
@@ -399,7 +453,7 @@ namespace Hairworm
             base.Layout();
 
 			// Draw a button 
-            System.Drawing.Rectangle rec0 = GH_Convert.ToRectangle(Bounds);
+            Rectangle rec0 = GH_Convert.ToRectangle(Bounds);
             rec0.Height += 22;
 
             System.Drawing.Rectangle rec1 = rec0;
@@ -418,8 +472,23 @@ namespace Hairworm
 
             if (channel == GH_CanvasChannel.Objects)
             {
-                //GH_Capsule button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Reload Cluster", 2, 0);
-                button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Black, "Reload Cluster", 2, 0);
+/*				//okay, so let's render the background
+                RectangleF capsuleBox = new RectangleF(this.Bounds.Location, this.Bounds.Size);
+                GH_Capsule capsule = GH_Capsule.CreateCapsule(capsuleBox, GH_Palette.Normal);
+				// but when we have a warning, change colors appropriately
+                if (Owner.RuntimeMessageLevel == GH_RuntimeMessageLevel.Error ||
+                    Owner.RuntimeMessageLevel == GH_RuntimeMessageLevel.Warning)
+                {
+                    capsule.Render(graphics, this.Selected, Owner.Locked, true);
+                }
+                else
+                {
+                    capsule.Render(graphics, Color.FromArgb(188, 157, 202));
+                }
+				capsule.Dispose();
+*/
+
+                button = GH_Capsule.CreateTextCapsule(ButtonBounds, ButtonBounds, GH_Palette.Pink, "(Re)load Cluster", 2, 0);
                 button.Render(graphics, Selected, Owner.Locked, false);
                 button.Dispose();
             }

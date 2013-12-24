@@ -372,13 +372,18 @@ namespace Hairworm
 				// now, we should add as many input/output params as we need.
 				for (int i = fixedParamNumInput; i < fixedParamNumInput + clusterParamNumInput; i++)
 				{
-						// even though this is generic, somehow it magically synces up with the type of the cluster type. huh.
-						Params.RegisterInputParam(new Param_GenericObject());
+					// even though this is generic, somehow it magically synces up with the type of the cluster type. huh.
+					Params.RegisterInputParam(new Param_GenericObject());
+                    Params.Input[i].Access = wormCluster.Params.Input[i - fixedParamNumInput].Access;
+                    MessageBox.Show(wormCluster.Params.Input[i - fixedParamNumInput].Access.ToString());
+//			clusterParamNumOutput = wormCluster.Params.Output.Count;
+ //                       GH_ParamAccess.list;
 				}
 				for (int i = fixedParamNumOutput; i < fixedParamNumOutput + clusterParamNumOutput; i++)
 				{
-						// even though this is generic, somehow it magically synces up with the type of the cluster type. huh.
-						Params.RegisterOutputParam(new Param_GenericObject());
+					// even though this is generic, somehow it magically synces up with the type of the cluster type. huh.
+					Params.RegisterOutputParam(new Param_GenericObject());
+                    Params.Output[i].Access = GH_ParamAccess.list;
 				}
 
 				//instantiate an array to hold the values of cluster inputs, since  we have to size it based on.. well, the number of cluster inputs

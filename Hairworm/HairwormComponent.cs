@@ -38,10 +38,13 @@ namespace Hairworm
 
 		string debugText = "";
         GH_ObjectWrapper[] clusterInputs = null;
-//        GH_Number[] clusterInputs = null;
 
         GH_Cluster wormCluster = null;
         GH_Document wormDoc = null;
+
+		// yup, this is hardcoded. ideally this should be an ini file. but. that will happen in the future.
+		string serverTXTURL = "https://raw.github.com/provolot/GrasshopperExchange/master/componenturl.txt";
+        string[] serverEXTENSIONS = { "ghx", "gh", "ghcluster" };
 
 		#region Methods of GH_Component interface
         /// <summary>
@@ -184,8 +187,7 @@ namespace Hairworm
 			// okay so this is for debugging purposes only
 			// validate url first
 
-
-			// do we have a working network?
+			// first things first. do we have a working network?
             if (!System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
             {
                 // uh, network is down..
@@ -195,7 +197,37 @@ namespace Hairworm
             }
             else
             {
-				// we've got a working network. let's see if the file exists.
+				// we've got a working network. 
+		
+				// okay, does the string start with http?
+                if (!clusterName.StartsWith("http"))
+                {
+                    // no it does not! so let's download the server file.
+                    string serverTXT = null;
+                    using (WebClient client = new WebClient())
+                    {
+                        try
+                        {
+                            serverTXT = client.DownloadString(serverTXTURL);
+                        }
+                        catch (WebException webEx)
+                        {
+							// oh god this should never happen. but it might. shit. 
+							// i mean - this would only happen when serverTXTURL is invalid -- that is, the hardcoded url is gone. :(
+                            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Error: ServerTXT not downloading. Contact the creator of this component. \n(" + webEx.Message + ")");
+							MessageBox.Show("Error: ServerTXT not downloading. Contact the creator of this component. \n(" + webEx.Message + ")", "Hairworm");
+                        }
+                    }
+					// so now we have serverTXT. let's replace 'REPLACE' with clustername.
+                    clusterName = serverTXT.Replace("REPLACE", clusterName);
+
+					// now we need to exchange GHEXTENSION with serverEXTENSIONs.
+				
+
+                }
+
+
+                //let's see if the file exists.
                 WebRequest request = WebRequest.Create(new Uri(clusterName));
                 request.Method = "HEAD";
                 try

@@ -212,7 +212,7 @@ namespace Hairworm
                         }
                         catch (WebException webEx)
                         {
-							// oh god this should never happen. but it might. shit. 
+							// oh man this should never happen. but it might. 
 							// i mean - this would only happen when serverTXTURL is invalid -- that is, the hardcoded url is gone. :(
                             AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Error: ServerTXT not downloading. Contact the creator of this component. \n(" + webEx.Message + ")");
 							MessageBox.Show("Error: ServerTXT not downloading. Contact the creator of this component. \n(" + webEx.Message + ")", "Hairworm");
@@ -224,11 +224,18 @@ namespace Hairworm
 					// now we need to exchange GHEXTENSION with serverEXTENSIONs.
                     for (int i = 0; i < serverEXTENSIONS.Length; i++)
                     {
-                        string aClusterName = clusterName.Replace("GHEXTENSION", serverEXTENSIONS[i]);
-
+                        string aClusterURL = clusterName.Replace("GHEXTENSION", serverEXTENSIONS[i]);
+                        if (URLexists(aClusterURL) == "true")
+                        {
+							// oh! it worked on this one.
+                            return aClusterURL;
+                        }
                     }
 					
-				
+					// man, it didn't work. cluster doesn't exist.	
+					AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cluster name is invalid - URL (" + clusterName + ") not available!");
+					MessageBox.Show("Cluster name is invalid - URL (" + clusterName + ") not available!", "Hairworm");
+                    return "";
 
                 }
 

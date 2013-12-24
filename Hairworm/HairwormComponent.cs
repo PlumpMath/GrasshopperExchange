@@ -184,6 +184,8 @@ namespace Hairworm
 			// okay so this is for debugging purposes only
 			// validate url first
 
+
+			// do we have a working network?
             if (!System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
             {
                 // uh, network is down..
@@ -193,6 +195,7 @@ namespace Hairworm
             }
             else
             {
+				// we've got a working network. let's see if the file exists.
                 WebRequest request = WebRequest.Create(new Uri(clusterName));
                 request.Method = "HEAD";
                 try
@@ -205,6 +208,7 @@ namespace Hairworm
                 }
                 catch (Exception e)
                 {
+					// okay, file doesn't exist, let us know
 					AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Cluster name is invalid - URL not available! \n(" + e.Message + ")");
 					MessageBox.Show("Cluster name is invalid - URL not available! \n(" + e.Message + ")", "Hairworm");
                     return "";
@@ -364,6 +368,9 @@ namespace Hairworm
 			////////////////////////
             string clusterName = Params.Input[0].VolatileData.get_Branch(0)[0].ToString();
 
+			////////////////////////
+            // get clustername and process/validate into URL
+			////////////////////////
 			clusterFileUrl = processValidateClusterName(clusterName);
 
 			////////////////////////

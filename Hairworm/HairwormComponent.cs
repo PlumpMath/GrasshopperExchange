@@ -225,6 +225,7 @@ namespace Hairworm
                     for (int i = 0; i < serverEXTENSIONS.Length; i++)
                     {
                         string aClusterURL = clusterName.Replace("GHEXTENSION", serverEXTENSIONS[i]);
+                        MessageBox.Show("we're trying :: " + aClusterURL);
                         if (URLexists(aClusterURL) == "true")
                         {
 							// oh! it worked on this one.

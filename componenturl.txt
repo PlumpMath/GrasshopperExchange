@@ -1,1 +1,1 @@
-https://raw.github.com/provolot/GrasshopperExchange/master/REPLACE.GHEXTENSION
+https://raw.github.com/provolot/GrasshopperExchange/master/components/REPLACE.GHEXTENSION
